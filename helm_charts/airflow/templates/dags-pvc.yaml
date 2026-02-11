@@ -10,23 +10,10 @@ spec:
   capacity:
     storage: 1Gi
   accessModes:
-    #- ReadWriteMany
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
     path: /kind-pv-data
-  # csi:
-  #   driver: file.csi.azure.com
-  #   volumeHandle: {{ .Values.gitSync.storageAccountName }}#{{ .Values.gitSync.fileShareName }}
-  #   volumeAttributes:
-  #     shareName: {{ .Values.gitSync.fileShareName }}
-  #     storageAccount: {{ .Values.gitSync.storageAccountName }}
-  #   # Secret with the following keys:
-  #   #   - azurestorageaccountname - Storage Account name
-  #   #   - azurestorageaccountkey - Access key
-  #   nodeStageSecretRef:
-  #     name: {{ .Values.gitSync.secretName }}
-  #     namespace: airflow
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -35,7 +22,6 @@ metadata:
   namespace: airflow
 spec:
   accessModes:
-    #- ReadWriteMany   # so multiple pods on different nodes can use it
     - ReadWriteOnce
   storageClassName: ""
   resources:

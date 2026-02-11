@@ -24,7 +24,7 @@ WORKDIR /root
 
 
 
-# ============ Install Helm, Azure CLI and kubectl =============
+# ============ Install Helm and kubectl =============
 
 # Install Helm
 RUN apt-get update && \
@@ -45,13 +45,25 @@ RUN apt-get update && \
     apt-get install -y kubectl && \
     apt-mark hold kubectl
 
-# Update the kubeconfig file (.kube/config) to specify IP of the Kubernetes cluster to use
-# host.docker.internal is the DNS name mapped to the IP of the host where this image will be running
-RUN <<EOF cat > modify_kubeconfig.sh
-    kubectl config set-cluster kind-$CLUSTER_NAME \
-        --server=https://host.docker.internal:6443 \
-        --insecure-skip-tls-verify=true
+
+
+
+# ============ Update kubeconfig file (.kube/config) ============
+
+# Update the kubeconfig file (.kube/config) to specify IP of the Kubernetes cluster to use:
+#   - host.docker.internal is the DNS name mapped to the IP of the host where this image will be running (created automatically by Docker)
+#   - 6443 is the port on which cluster is listening. We specified that port in the kind-config file
+RUN <<EOF cat > /root/modify_kubeconfig.sh
+kubectl config set-cluster kind-$CLUSTER_NAME \
+    --server=https://host.docker.internal:6443 \
+    --insecure-skip-tls-verify=true
 EOF
+
+RUN \
+    # Remove the '\r' sign from the script
+    sed -i 's/\r$//' /root/modify_kubeconfig.sh && \
+    # Make the script executable
+    chmod +x /root/modify_kubeconfig.sh
 
 
 
@@ -65,8 +77,10 @@ RUN apt-get install nano
 
 # ============ Create and save a bash script for building images and loading them to kind =============
 
-# Those images will be used for deploying different parts of the system. Those are images for:
+# Those images will be used for deploying different parts of the system as pods. Those are images for:
 # - Airflow
+# - Spark Thrift Server
+# - MLflow
 
 # Copy Dockerfiles and other files needed for building images
 COPY dockerfiles /root/dockerfiles

@@ -6,11 +6,11 @@ from datetime import datetime
 
 
 # =============== Configuration ===============
-image = "dataanalyticsbulka.azurecr.io/airflow-dag:latest" # Include only lowercase letters
+image = "airflow-dag:latest" # Include only lowercase letters
 script_to_run = "/opt/airflow/dags/project_1/task_1.py"
 pvc_name = "airflow-dags-pvc" # Name of the PVC with saved DAGs code (pulled by git-sync)
-airflow_logs_url = "wasb://airflow-logs@systemfilesbulka.blob.core.windows.net" # URL of the Storage Account used for saving Airflow logs
-conn_id = "azure_blob" # ID of the Airflow connection used for accessing Azure Storage Account for saving Airflow logs
+# airflow_logs_url = "wasb://airflow-logs@systemfilesbulka.blob.core.windows.net" # URL of the Storage Account used for saving Airflow logs
+# conn_id = "azure_blob" # ID of the Airflow connection used for accessing Azure Storage Account for saving Airflow logs
 
 
 
@@ -47,6 +47,7 @@ with DAG(
         ,namespace="airflow"
         ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
         ,image=image
+        ,image_pull_policy="IfNotPresent"   # don't pull an image from a remote registry but use a local one instead (for testing on kind)
         ,volumes=[dags_volume]
         ,volume_mounts=[dags_volume_mount]
         ,cmds=["python", script_to_run]
@@ -68,7 +69,7 @@ with DAG(
         #     )
         # }
         # ,in_cluster=True
-        # ,get_logs=True
-        # ,is_delete_operator_pod=True
+        ,get_logs=True
+        ,is_delete_operator_pod=False
     )
 

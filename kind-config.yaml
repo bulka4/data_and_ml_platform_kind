@@ -5,22 +5,24 @@ nodes:
   - role: control-plane
     extraPortMappings:
       # port on which cluster is listening. Using this port we communicate with the cluster using kubectl
-      # so it needs to be used in the kubeconfig file
+      # so it needs to be used in the kubeconfig file. We use that port when modifying the kubeconfig file
+      # in the image for interacting with kind (interacting.kind.Dockerfile Dockerfile)
       - containerPort: 6443
         hostPort: 6443
         protocol: TCP
-      # port for accessing services
+      # port for accessing services. We will use nodePort services (like webserver service specified in the helm_charts/airflow/values.yaml)
+      # which maps containerPort 30080 to the port in containers using the service.
       - containerPort: 30080
         hostPort: 8080
         protocol: TCP
     # Mount a host folder into the node container so it can be mounted into pods
     extraMounts:
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data and ml platform/data_and_ml_platform_kind/volume_data"
-        containerPath: /kind-pv-data
+      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/volume_data"
+        containerPath: /kind-pv-data  # This path can be used in a PV as a hostPath
   - role: worker
     # Mount a host folder into the node container so it can be mounted into pods
     extraMounts:
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data and ml platform/data_and_ml_platform_kind/volume_data"
-        containerPath: /kind-pv-data
+      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/volume_data"
+        containerPath: /kind-pv-data  # This path can be used in a PV as a hostPath
 networking:
   disableDefaultCNI: false

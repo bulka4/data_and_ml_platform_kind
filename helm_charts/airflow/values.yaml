@@ -10,8 +10,8 @@
 #       - azurestorageaccountname - Storage Account name
 #       - azurestorageaccountkey - Access key
 gitSync:
-  repoURL: https://github.com/bulka4/data_and_ml_platform.git
-  repoName: data_and_ml_platform.git
+  repoURL: https://github.com/bulka4/data_and_ml_platform_kind.git
+  repoName: data_and_ml_platform_kind.git
   dagsFolderPath: apps/airflow/dags
   branch: main
   clonePath: /opt/airflow/dags
@@ -85,7 +85,6 @@ airflow:
     serviceAccount:
       create: False
       name: airflow-sa
-    
 
   triggerer:
     # Limit the size of storage for logs
