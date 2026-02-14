@@ -15,6 +15,8 @@ for ns in "airflow" "spark" "mlflow"; do
 done
 
 
+# ================ Airflow ================
+
 # Create a secret used by Airflow to connect to PostgreSQL metadata db
 kubectl create secret generic airflow-postgres-connection \
 	--from-literal=connection=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_DNS}:5432/${POSTGRES_DB} \
@@ -27,3 +29,16 @@ kubectl create secret generic airflow-postgres \
 	--from-literal=postgres_password=${POSTGRES_PASSWORD} \
 	--from-literal=postgres_database=${POSTGRES_DB} \
 	-n airflow
+
+
+
+
+
+# ================ Spark ================
+
+# Secret for Hive Metastore for accessing PostgreSQL metadata db:
+kubectl create secret generic hive-metastore-db-secret \
+  --from-literal=hive-password=hivepassword \
+  --from-literal=postgres-password=adminpassword \
+  -n spark
+

@@ -89,9 +89,11 @@ COPY dockerfiles /root/dockerfiles
 RUN <<EOF cat > /root/dockerfiles/build_and_load.sh
 docker build -t $AIRFLOW_IMAGE_NAME -f dockerfiles/airflow.Dockerfile dockerfiles
 docker build -t $AIRFLOW_DAG_IMAGE_NAME -f dockerfiles/airflow.dag.Dockerfile dockerfiles
+docker build -t $SPARK_IMAGE_NAME -f dockerfiles/spark.thrift.server.Dockerfile dockerfiles
 
 kind load docker-image $AIRFLOW_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $AIRFLOW_DAG_IMAGE_NAME --name $CLUSTER_NAME
+kind load docker-image $SPARK_IMAGE_NAME --name $CLUSTER_NAME
 EOF
 
 RUN \
@@ -108,7 +110,7 @@ RUN \
 # Helm charts for deploying all the resources
 COPY helm_charts /root/helm_charts
 # Script for creating Kubernetes namespaces and secrets
-COPY create_k8s_secrets.bash /root/create_k8s_secrets.bash
+COPY create_k8s_secrets.sh /root/create_k8s_secrets.sh
 
 
 

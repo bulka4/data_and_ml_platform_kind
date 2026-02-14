@@ -15,14 +15,22 @@ nodes:
       - containerPort: 30080
         hostPort: 8080
         protocol: TCP
-    # Mount a host folder into the node container so it can be mounted into pods
+    # Mount host folders into the node container so it can be mounted into pods
     extraMounts:
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/volume_data"
-        containerPath: /kind-pv-data  # This path can be used in a PV as a hostPath
+      # Airflow DAGs
+      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/apps/airflow/dags"
+        containerPath: /airflow_dags  # This path can be used in a PV as a hostPath
+      # Hive data warehouse
+      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/hive_dwh"
+        containerPath: /hive_dwh
   - role: worker
-    # Mount a host folder into the node container so it can be mounted into pods
+    # Mount host folders into the node container so it can be mounted into pods
     extraMounts:
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/volume_data"
-        containerPath: /kind-pv-data  # This path can be used in a PV as a hostPath
+      # Airflow DAGs
+      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/apps/airflow/dags"
+        containerPath: /airflow_dags  # This path can be used in a PV as a hostPath
+      # Hive data warehouse
+      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/hive_dwh"
+        containerPath: /hive_dwh
 networking:
   disableDefaultCNI: false

@@ -13,7 +13,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /kind-pv-data
+    path: /airflow_dags
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
