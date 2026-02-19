@@ -5,6 +5,7 @@ FROM ubuntu:22.04
 # Names of images we will build and load to kind which will be used when deploying resources on kind. Those are images for:
 # - Airflow
 # - Spark Thrift Server
+# - Hive Metastore
 # - MLflow
 ARG CLUSTER_NAME=data-platform
 ARG AIRFLOW_IMAGE_NAME=airflow:latest
@@ -12,6 +13,7 @@ ARG AIRFLOW_DAG_IMAGE_NAME=airflow-dag:latest
 ARG SPARK_IMAGE_NAME=spark-thrift-server:latest
 ARG MLFLOW_TRACKING_SERVER_IMAGE_NAME=mlflow-tracking-server:latest
 ARG MLFLOW_PROJECT_IMAGE_NAME=mlflow-project:latest
+ARG HIVE_IMAGE_NAME=hive
 # This prevents prompting user for input for example when using apt-get.
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -90,10 +92,12 @@ RUN <<EOF cat > /root/dockerfiles/build_and_load.sh
 docker build -t $AIRFLOW_IMAGE_NAME -f dockerfiles/airflow.Dockerfile dockerfiles
 docker build -t $AIRFLOW_DAG_IMAGE_NAME -f dockerfiles/airflow.dag.Dockerfile dockerfiles
 docker build -t $SPARK_IMAGE_NAME -f dockerfiles/spark.thrift.server.Dockerfile dockerfiles
+docker build -t $HIVE_IMAGE_NAME -f dockerfiles/hive.Dockerfile dockerfiles
 
 kind load docker-image $AIRFLOW_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $AIRFLOW_DAG_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $SPARK_IMAGE_NAME --name $CLUSTER_NAME
+kind load docker-image $HIVE_IMAGE_NAME --name $CLUSTER_NAME
 EOF
 
 RUN \

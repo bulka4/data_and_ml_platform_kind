@@ -1,0 +1,90 @@
+# In pods running the Hive Metastore, in the `/opt/hive/conf` folder we need to have configuration files:
+# - `hive-site.xml`
+
+# We create this config files using a ConfigMap and we will mount them into the pods running the Hive Metastore.
+
+# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` which we will set up in pods where that ConfigMap 
+# will be mounted (it will be done by Hive inside the image, not Kubernetes).
+
+# - ${DB_PASSWORD} is a password to PostgreSQL metadata db
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hive-conf-template
+  namespace: {{ .Values.namespace }}
+data:
+  hive-site.xml.template: |
+    <configuration>
+
+      <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>
+          jdbc:postgresql://hive-postgres:5432/{{ .Values.hive.database.name }}
+        </value>
+      </property>
+
+      <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.postgresql.Driver</value>
+      </property>
+
+      <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>{{ .Values.hive.database.user }}</value>
+      </property>
+
+      <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>${DB_PASSWORD}</value>
+      </property>
+
+      <property>
+        <name>hive.metastore.uris</name>
+        <value>
+          thrift://localhost:{{ .Values.hive.metastorePort }}
+        </value>
+      </property>
+
+      <!-- This config must be the same at the client side (e.g. Spark) -->
+      <!-- Specify where the data will be stored -->
+      <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>file:/user/hive/warehouse</value>
+      </property>
+
+      <property>
+        <name>datanucleus.autoCreateSchema</name>
+        <value>true</value>
+      </property>
+
+      <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>false</value>
+      </property>
+
+      <!-- Block certain changes of column types (like from int to string) -->
+      <property>
+        <name>hive.metastore.disallow.incompatible.col.type.changes</name>
+        <value>false</value>
+      </property>
+
+      <!-- Dont use Kerberos authentication. This config must be the same at the client side (e.g. Spark) -->
+      <property>
+        <name>hive.metastore.sasl.enabled</name>
+        <value>false</value>
+      </property>
+
+      <!-- Allow to automatically create partitions -->
+      <property>
+        <name>hive.exec.dynamic.partition</name>
+        <value>true</value>
+      </property>
+
+      <!-- All partition columns can be dynamic. Fully automatic partition creation. -->
+      <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nonstrict</value>
+      </property>
+
+    </configuration>

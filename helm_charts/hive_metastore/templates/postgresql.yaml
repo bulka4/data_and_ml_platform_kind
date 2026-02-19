@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hive-postgres
-  namespace: spark
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:

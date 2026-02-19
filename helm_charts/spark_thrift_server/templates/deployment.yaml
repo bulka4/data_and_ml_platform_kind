@@ -1,0 +1,115 @@
+# This deployment starts the Thrift Server and Spark Driver running in the same pod. Driver will be creating executors in separate pods.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-thrift-server
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-thrift-server
+  template:
+    metadata:
+      labels:
+        app: spark-thrift-server
+    spec:
+      serviceAccountName: {{ .Values.spark.serviceAccountName }}
+      initContainers:
+        - name: prepare-configs
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              # Install envsubst
+              apk add --no-cache gettext
+
+              # Interpolate the template config file (insert values of env vars)
+              envsubst < /opt/spark/conf/template/hive-site.xml.template > /opt/spark/conf/hive-site.xml
+              envsubst < /opt/spark/conf/template/spark-defaults.conf.template > /opt/spark/conf/spark-defaults.conf
+          volumeMounts:
+            - name: spark-conf-template
+              mountPath: /opt/spark/conf/template
+            - name: conf
+              mountPath: /opt/spark/conf
+          # env:
+            # Variables with:
+            #   - Servie Principal's client ID and secret
+            #   - Azure Tenant ID
+            #   - Name of the Storage Account
+            # which will be used in the spark-defaults.conf file
+            # - name: CLIENT_ID
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: adls-sp-secret
+            #       key: client-id
+            # - name: CLIENT_SECRET
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: adls-sp-secret
+            #       key: client-secret
+            # - name: TENANT_ID
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: adls-sp-secret
+            #       key: tenant-id
+            # - name: MY_ACCOUNT
+            #   value: {{ .Values.spark.storageAccountName }}
+      containers:
+        - name: thrift
+          image: {{ .Values.spark.image.url }}
+          imagePullPolicy: {{ .Values.spark.image.pullPolicy }}
+          # Below command starts the Thrift Server and Spark Driver. Driver will be creating executors in separate pods.
+          # We use spark-submit instead of start-thriftserver.sh in order to run the Thrift Server in the foreground (there is no child process being created,
+          # it runs as PID 1). Thanks to that pod doesn't change status into completed and we can see logs.
+          # spark.driver.bindAddress is an IP address to which Spark Driver will bind (it will listen on that IP). That should be 
+          #     pod's IP
+          # spark.driver.host specifies a DNS name of the Spark Driver which will be used by executor pods to talk to the Driver
+          #     It can be the name of the service which is used by the pod running the Thrift Server and Driver
+          # spark.driver.port and spark.blockManager.port might be needed (I am not sure) so driver can bind to a proper port (start listening on that port)
+          # serviceAccountName is the name of the service account with permissions for creating pods. It will be used by the Driver to create Executor pods.
+          command:
+            - /bin/bash
+            - -c
+            - |
+              /opt/spark/bin/spark-submit \
+              --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2 \
+              --master k8s://https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
+              --name spark-thrift-server \
+              --conf spark.driver.bindAddress=$POD_IP \
+              --conf spark.driver.host={{ .Values.spark.serviceName }}.{{ .Values.namespace }}.svc.cluster.local \
+              --conf spark.driver.port=7077 \
+              --conf spark.blockManager.port=7078 \
+              --conf spark.kubernetes.namespace=spark \
+              --conf spark.kubernetes.authenticate.driver.serviceAccountName={{ .Values.spark.serviceAccountName }} \
+              --conf spark.kubernetes.container.image={{ .Values.spark.image.url }} \
+              --conf spark.executor.instances=1 \
+              --conf spark.executor.memory=1g \
+              --conf spark.executor.cores=1 \
+              --conf spark.sql.shuffle.partitions=200 \
+              local:///opt/spark/jars/spark-hive-thriftserver_2.12-3.5.0.jar
+          env:
+            - name: SPARK_HOME
+              value: /opt/spark
+            - name: HIVE_CONF_DIR
+              value: /opt/spark/conf
+            # IP address of the pod
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          # Mount config files created in the ConfigMap
+          volumeMounts:
+          - name: conf
+            mountPath: /opt/spark/conf
+          ports:
+            - containerPort: 10000
+          restartPolicy: Always # Restart the container if it exits
+      volumes:
+      - name: spark-conf-template
+        configMap:
+          name: spark-conf-template
+      - name: conf
+        emptyDir: {}

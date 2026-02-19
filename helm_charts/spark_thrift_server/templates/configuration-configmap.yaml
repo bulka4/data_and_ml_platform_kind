@@ -1,0 +1,75 @@
+# In pods running the Thrift Server and Hive Metastore, in the `/opt/spark/conf` folder we need to have configuration files:
+# - `hive-site.xml`
+
+# For the Thrift Server, we need additionally in the same folder:
+# - `spark-defaults.conf`
+
+# We create those config files using a ConfigMap and we will mount them into the pods running the Thrift Server and Hive Metastore.
+
+# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` which we will set up in pods where that ConfigMap 
+# will be mounted (it will be done by Spark / Hive inside the image, not Kubernetes).
+
+# - ${CLIENT_ID} and ${CLIENT_SECRET} refers to credentials of a Service Principal with permissions for that Storage Account
+# - ${MY_ACCOUNT} is a name of our Storage Account
+# - ${TENANT_ID} - Our tenant ID from Azure
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-conf-template
+data:
+  hive-site.xml.template: |
+    <configuration>
+
+      <property>
+        <name>hive.metastore.uris</name>
+        <value>{{ .Values.hive.metastoreUris }}</value>
+      </property>
+
+      <!-- Specify where the data will be stored -->
+      <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>{{ .Values.hive.warehouseDir }}</value>
+      </property>
+
+      <!-- Allow to automatically create partitions -->
+      <property>
+        <name>hive.exec.dynamic.partition</name>
+        <value>true</value>
+      </property>
+
+      <!-- All partition columns can be dynamic. Fully automatic partition creation. -->
+      <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nonstrict</value>
+      </property>
+
+      <!-- How long clients wait for a response from the metastore before timing out -->
+      <property>
+        <name>hive.metastore.client.socket.timeout</name>
+        <value>60</value>
+      </property>
+
+      <!-- Dont use Kerberos authentication -->
+      <property>
+        <name>hive.metastore.sasl.enabled</name>
+        <value>false</value>
+      </property>
+
+    </configuration>
+
+  spark-defaults.conf.template: |
+    <!-- Use Hive Metastore or the in-memory catalog -->
+    spark.sql.catalogImplementation=hive
+    <!-- spark.sql.catalogImplementation=in-memory -->
+
+    <!-- Configs for authentication to Azure Storage Account (to be able to read and save data) -->
+    <!-- spark.hadoop.fs.azure.account.auth.type.${MY_ACCOUNT}.dfs.core.windows.net=OAuth -->
+
+    <!-- spark.hadoop.fs.azure.account.oauth.provider.type.${MY_ACCOUNT}.dfs.core.windows.net=org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider -->
+
+    <!-- spark.hadoop.fs.azure.account.oauth2.client.id.${MY_ACCOUNT}.dfs.core.windows.net=${CLIENT_ID} -->
+
+    <!-- spark.hadoop.fs.azure.account.oauth2.client.secret.${MY_ACCOUNT}.dfs.core.windows.net=${CLIENT_SECRET} -->
+
+    <!-- spark.hadoop.fs.azure.account.oauth2.client.endpoint.${MY_ACCOUNT}.dfs.core.windows.net=https://login.microsoftonline.com/${TENANT_ID}/oauth2/token -->
