@@ -1,0 +1,56 @@
+# Pod running dbt which connects to the Spark Thrift Server
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dbt
+  namespace: spark
+  labels:
+    app: dbt
+spec:
+  containers:
+    - name: dbt
+      image: dbt:latest
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/bash", "-c", "sleep 3600"]
+      env:
+        - name: SPARK_HOST
+          value: "spark-thrift-server"
+        - name: SPARK_PORT
+          value: "10000"
+        - name: SPARK_SCHEMA
+          value: "default"
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: "1"
+      volumeMounts:
+        - name: test-spark-connection
+          mountPath: /workspace/test_spark_connection.py
+          subPath: test_spark_connection.py
+        - name: dbt-profiles
+          mountPath: /root/.dbt/profiles.yml
+          subPath: profiles.yml
+        - name: dbt-project
+          mountPath: /workspace/dbt_project.yml
+          subPath: dbt_project.yml
+        - name: dbt-models
+          mountPath: /workspace/models/dwh_fact/model.sql
+          subPath: model.sql
+  volumes:
+    - name: test-spark-connection
+      configMap:
+        name: test-spark-connection
+    - name: dbt-profiles
+      configMap:
+        name: dbt-profiles
+    - name: dbt-project
+      configMap:
+        name: dbt-project
+    - name: dbt-models
+      configMap:
+        name: dbt-models
+  restartPolicy: Never

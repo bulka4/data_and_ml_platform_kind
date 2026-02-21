@@ -3,6 +3,12 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
+    # Remove taints so we can schedule pods on the control-plane as well
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          taints: []
     extraPortMappings:
       # port on which cluster is listening. Using this port we communicate with the cluster using kubectl
       # so it needs to be used in the kubeconfig file. We use that port when modifying the kubeconfig file

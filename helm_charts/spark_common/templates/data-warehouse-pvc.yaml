@@ -1,0 +1,29 @@
+# PV which must be used by both Hive Metastore and Spark to store data and it needs to be mounted to the same paths in both deployments.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: warehouse-pv
+  namespace: {{ .Values.namespace }}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: {{ .Values.hostPath }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: warehouse-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi

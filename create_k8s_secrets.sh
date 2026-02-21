@@ -42,3 +42,10 @@ kubectl create secret generic hive-metastore-db-secret \
   --from-literal=postgres-password=adminpassword \
   -n spark
 
+# Service Principal's credentials which will be used in the `spark-defaults.conf`
+kubectl create secret generic adls-sp-secret \
+  --from-literal=client-id=XXXX \
+  --from-literal=client-secret=XXXX \
+  --from-literal=tenant-id=XXXX \
+  --from-literal=storage-account=
+  -n spark

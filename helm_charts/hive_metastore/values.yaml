@@ -11,6 +11,19 @@ hive:
     # url: hive
     # tag: latest
     pullPolicy: IfNotPresent
+  # warehouseDir: file:/shared/warehouse # This must match what is set up in Spark's deployment, hive-site.xml, the spark.sql.warehouse.dir config
+  # warehouseDir must match what is set up in Spark's deployment, hive-site.xml, the spark.sql.warehouse.dir config
+  warehouseDir: abfss://<CONTAINER>@<STORAGE_ACCOUNT>.dfs.core.windows.net/hive-warehouse
+  
+  storageAccount:
+    # Name of the Kubernetes secret with the following keys:
+    #   - client-id - Client ID of a Service Principal with access to the Storage Account
+    #   - client-secret - Client secret of a Service Principal with access to the Storage Account
+    #   - tenant-id - Tenant ID where Service Principal is assigned to
+    #   - storage-account - Name of the Storage Account to use
+    secret: adls-sp-secret
+    # Name of the container to use as data warehouse
+    container: dwh
   metastorePort: 9083
   # Name of the database in PostgreSQL db with metadata and name of the user who is the owner of that database
   database:

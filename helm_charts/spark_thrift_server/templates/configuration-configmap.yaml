@@ -26,12 +26,6 @@ data:
         <value>{{ .Values.hive.metastoreUris }}</value>
       </property>
 
-      <!-- Specify where the data will be stored -->
-      <property>
-        <name>hive.metastore.warehouse.dir</name>
-        <value>{{ .Values.hive.warehouseDir }}</value>
-      </property>
-
       <!-- Allow to automatically create partitions -->
       <property>
         <name>hive.exec.dynamic.partition</name>
@@ -63,13 +57,21 @@ data:
     spark.sql.catalogImplementation=hive
     <!-- spark.sql.catalogImplementation=in-memory -->
 
+    <!-- This must match the hive.metastore.warehouse.dir config in Hive Metastore server, hive-site.xml file -->
+    <!-- Specify where the data will be stored -->
+    spark.sql.warehouse.dir={{ .Values.spark.warehouseDir }}
+
     <!-- Configs for authentication to Azure Storage Account (to be able to read and save data) -->
-    <!-- spark.hadoop.fs.azure.account.auth.type.${MY_ACCOUNT}.dfs.core.windows.net=OAuth -->
+    fs.azure.account.key.${STORAGE_ACCOUNT}.dfs.core.windows.net=${SA_ACCESS_KEY}
 
-    <!-- spark.hadoop.fs.azure.account.oauth.provider.type.${MY_ACCOUNT}.dfs.core.windows.net=org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider -->
+    <!--
+    spark.hadoop.fs.azure.account.auth.type.${STORAGE_ACCOUNT}.dfs.core.windows.net=OAuth
 
-    <!-- spark.hadoop.fs.azure.account.oauth2.client.id.${MY_ACCOUNT}.dfs.core.windows.net=${CLIENT_ID} -->
+    spark.hadoop.fs.azure.account.oauth.provider.type.${STORAGE_ACCOUNT}.dfs.core.windows.net=org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider
 
-    <!-- spark.hadoop.fs.azure.account.oauth2.client.secret.${MY_ACCOUNT}.dfs.core.windows.net=${CLIENT_SECRET} -->
+    spark.hadoop.fs.azure.account.oauth2.client.id.${STORAGE_ACCOUNT}.dfs.core.windows.net=${CLIENT_ID}
 
-    <!-- spark.hadoop.fs.azure.account.oauth2.client.endpoint.${MY_ACCOUNT}.dfs.core.windows.net=https://login.microsoftonline.com/${TENANT_ID}/oauth2/token -->
+    spark.hadoop.fs.azure.account.oauth2.client.secret.${STORAGE_ACCOUNT}.dfs.core.windows.net=${CLIENT_SECRET}
+
+    spark.hadoop.fs.azure.account.oauth2.client.endpoint.${STORAGE_ACCOUNT}.dfs.core.windows.net=https://login.microsoftonline.com/${TENANT_ID}/oauth2/token
+    -->

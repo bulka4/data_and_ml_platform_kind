@@ -46,11 +46,21 @@ data:
         </value>
       </property>
 
-      <!-- This config must be the same at the client side (e.g. Spark) -->
+      <!-- This config must be the same as the spark.sql.warehouse.dir config in Spark's server, spark-defaults.conf file -->
       <!-- Specify where the data will be stored -->
       <property>
         <name>hive.metastore.warehouse.dir</name>
-        <value>file:/user/hive/warehouse</value>
+        <value>{{ .Values.hive.warehouseDir }}</value>
+      </property>
+
+      <property>
+          <name>hive.metastore.client.factory.class</name>
+          <value>org.apache.hadoop.hive.metastore.HiveMetaStoreClientFactory</value>
+      </property>
+      
+      <property>
+          <name>hive.exec.scratchdir</name>
+          <value>/tmp/hive</value>
       </property>
 
       <property>
@@ -87,4 +97,40 @@ data:
         <value>nonstrict</value>
       </property>
 
+    </configuration>
+  
+  core-site.xml.template: |
+    <configuration>
+        <property>
+            <name>fs.defaultFS</name>
+            <value>abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/</value>
+        </property>
+
+        <property>
+          <name>fs.azure.account.key.<STORAGE_ACCOUNT>.dfs.core.windows.net</name>
+          <value>${SA_ACCESS_KEY}</value>
+        </property>
+
+        <!--
+          <property>
+              <name>fs.azure.account.auth.type.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
+              <value>OAuth</value>
+          </property>
+          <property>
+              <name>fs.azure.account.oauth.provider.type.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
+              <value>org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider</value>
+          </property>
+          <property>
+              <name>fs.azure.account.oauth2.client.id.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
+              <value>${CLIENT_ID}</value>
+          </property>
+          <property>
+              <name>fs.azure.account.oauth2.client.secret.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
+              <value>${CLIENT_SECRET}</value>
+          </property>
+          <property>
+              <name>fs.azure.account.oauth2.client.endpoint.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
+              <value>https://login.microsoftonline.com/${TENANT_ID}/oauth2/token</value>
+          </property>
+        -->
     </configuration>

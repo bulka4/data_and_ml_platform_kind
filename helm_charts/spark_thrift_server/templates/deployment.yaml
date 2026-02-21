@@ -34,7 +34,7 @@ spec:
               mountPath: /opt/spark/conf/template
             - name: conf
               mountPath: /opt/spark/conf
-          # env:
+          env:
             # Variables with:
             #   - Servie Principal's client ID and secret
             #   - Azure Tenant ID
@@ -55,8 +55,16 @@ spec:
             #     secretKeyRef:
             #       name: adls-sp-secret
             #       key: tenant-id
-            # - name: MY_ACCOUNT
-            #   value: {{ .Values.spark.storageAccountName }}
+            - name: STORAGE_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: adls-sp-secret
+                  key: storage-account
+            - name: SA_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: adls-sp-secret
+                  key: sa-access-key
       containers:
         - name: thrift
           image: {{ .Values.spark.image.url }}
@@ -104,6 +112,8 @@ spec:
           volumeMounts:
           - name: conf
             mountPath: /opt/spark/conf
+          - name: warehouse
+            mountPath: /shared/warehouse
           ports:
             - containerPort: 10000
           restartPolicy: Always # Restart the container if it exits
@@ -113,3 +123,7 @@ spec:
           name: spark-conf-template
       - name: conf
         emptyDir: {}
+      # We need to use the same PVC as we used in the Hive Metastore deployment (and mount it to the same folder path)
+      - name: warehouse
+        persistentVolumeClaim:
+          claimName: warehouse-pvc

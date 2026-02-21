@@ -9,16 +9,17 @@ spark:
   serviceAccountName: spark-thrift-sa
   serviceName: spark-thrift-server
   # Storage Account and container for storing data used by Spark
-  storageAccountName: dwhbulka
-  containerName: dwh
+  # storageAccountName: dwhbulka
+  # containerName: dwh
+  storageAccountSecret: adls-sp-secret
+  # This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
+  warehouseDir: abfss://<CONTAINER>@<STORAGE_ACCOUNT>.dfs.core.windows.net/hive-warehouse
 
 # Variables for Hive Metastore
 hive:
-  metastorePort: 9083
   # URL of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name of the server running Hive Metastore
   # If we have many metastores, we can provide multiple URLs: url_1,url2,...
   metastoreUris: thrift://hive-metastore:9083 
-  warehouseDir: file:/user/hive/warehouse # This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
 
 # Variables related to the ACR where we keep Docker images which will be deployed in pods
 acrSecret:

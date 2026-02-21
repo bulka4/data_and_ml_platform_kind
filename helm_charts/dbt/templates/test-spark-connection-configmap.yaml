@@ -1,0 +1,33 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-spark-connection
+  namespace: spark
+data:
+  test_spark_connection.py: |
+    import os
+    from pyhive import hive
+
+    host = os.getenv("SPARK_HOST", "spark-thrift-server")
+    port = int(os.getenv("SPARK_PORT", "10000"))
+
+    print(f"Connecting to Spark Thrift at {host}:{port}")
+
+    try:
+        conn = hive.Connection(host=host, port=port)
+        cursor = conn.cursor()
+        cursor.execute("select * from fact.model")
+        results = cursor.fetchall()
+
+        print("Connection successful!")
+        print("Query result:")
+        for row in results:
+            print(row)
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        print("Connection failed!")
+        print(str(e))
