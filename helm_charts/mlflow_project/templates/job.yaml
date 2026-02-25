@@ -55,7 +55,7 @@ spec:
           volumeMounts:
             # Mount a volume with MLflow project script pulled from the repo by git-sync
             - name: repo
-              mountPath: /mnt/mlprojects
+              mountPath: /mnt/mlproject
               subPath: {{ .Values.git.path }}
           {{- end }}
       restartPolicy: Never

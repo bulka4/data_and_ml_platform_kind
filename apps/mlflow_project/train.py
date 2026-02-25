@@ -13,7 +13,7 @@ parser.add_argument("--alpha", type=float, required=True, help="The alpha parame
 parser.add_argument("--max_iter", type=int, required=True, help="The max_iter parameter for the sklearn.linear_model.Lasso model.")
 args = parser.parse_args()
 
-
+print("Started training")
 # -----------------------------
 # Generate some sample data
 # -----------------------------
@@ -37,3 +37,4 @@ lasso.fit(X_train, y_train)
 # Save model in artifact store
 # -----------------------------
 mlflow.sklearn.log_model(lasso, artifact_path="lasso_model")
+print("Finished training")
