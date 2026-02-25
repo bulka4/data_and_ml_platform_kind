@@ -29,7 +29,7 @@ mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
 # - commit - Commit from which to take the code (leave blank (commit: "") to take the latest commit)
 git:
   enabled: true
-  url: https://github.com/org/data_and_ml_platform_kind.git
-  path: /apps/mlflow_project
+  url: https://github.com/bulka4/data_and_ml_platform_kind.git
+  path: apps/mlflow_project
   branch: main
   commit: ""

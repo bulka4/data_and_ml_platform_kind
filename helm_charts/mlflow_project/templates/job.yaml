@@ -12,8 +12,8 @@ spec:
     spec:
       # Service Account used for reading a secret for accessing an image from ACR.
       # serviceAccountName: {{ .Values.serviceAccountName }}
-      imagePullSecrets:
-        - name: {{ .Values.acrSecret }}
+      # imagePullSecrets:
+      #   - name: {{ .Values.acrSecret }}
       
       volumes:
       # Volume for code pulled by git
@@ -30,10 +30,9 @@ spec:
             - |
               git clone {{ .Values.git.url }} /repo
               cd /repo
-              {{- if .Values.git.commit }}
-              git checkout -b {{ .Values.git.branch }} {{ .Values.git.commit }}
-              {{- else}}
               git checkout -b {{ .Values.git.branch }}
+              {{- if .Values.git.commit }}
+              git checkout {{ .Values.git.commit }}
               {{- end}}
           volumeMounts:
             - name: repo
