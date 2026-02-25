@@ -1,12 +1,17 @@
+# Configuration files determining how Hive works, for example which metadata db to use, where the data is stored.
+
 # In pods running the Hive Metastore, in the `/opt/hive/conf` folder we need to have configuration files:
-# - `hive-site.xml`
+# - hive-site.xml
+# - core-site.xml
 
 # We create this config files using a ConfigMap and we will mount them into the pods running the Hive Metastore.
 
-# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` which we will set up in pods where that ConfigMap 
-# will be mounted (it will be done by Hive inside the image, not Kubernetes).
-
-# - ${DB_PASSWORD} is a password to PostgreSQL metadata db
+# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` using envsubst. We will set up those env vars
+# in pods where that ConfigMap will be mounted:
+# - DB_PASSWORD is a password to PostgreSQL metadata db
+# - CONTAINER - Name of the container in Storage Account where data warehouse data will be stored
+# - STORAGE_ACCOUNT - Name of the Storage Account where data warehouse data will be stored
+# - SA_ACCESS_KEY - Access key to the Storage Account where data warehouse data will be stored
 
 apiVersion: v1
 kind: ConfigMap
@@ -17,6 +22,7 @@ data:
   hive-site.xml.template: |
     <configuration>
 
+      <!-- URL for conneting to the PostgreSQL metadata db -->
       <property>
         <name>javax.jdo.option.ConnectionURL</name>
         <value>
@@ -24,21 +30,25 @@ data:
         </value>
       </property>
 
+      <!-- Driver to use for conneting to the PostgreSQL metadata db -->
       <property>
         <name>javax.jdo.option.ConnectionDriverName</name>
         <value>org.postgresql.Driver</value>
       </property>
 
+      <!-- Username to use for conneting to the PostgreSQL metadata db -->
       <property>
         <name>javax.jdo.option.ConnectionUserName</name>
         <value>{{ .Values.hive.database.user }}</value>
       </property>
 
+      <!-- Password to use for conneting to the PostgreSQL metadata db -->
       <property>
         <name>javax.jdo.option.ConnectionPassword</name>
         <value>${DB_PASSWORD}</value>
       </property>
 
+      <!-- URL to use for conneting to the Hive Metastore (used here only for using hive CLI in the pod running Metastore for testing) -->
       <property>
         <name>hive.metastore.uris</name>
         <value>
@@ -98,39 +108,19 @@ data:
       </property>
 
     </configuration>
-  
+
   core-site.xml.template: |
     <configuration>
+        <!-- Default filesystem URI. Used when writing / reading data -->
         <property>
             <name>fs.defaultFS</name>
             <value>abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/</value>
         </property>
 
+        <!-- Access key for authentication to Azure Storage Account. STORAGE_ACCOUNT is a name of the Storage Account -->
+        <!-- to use and SA_ACCESS_KEY is an access key to it. -->
         <property>
-          <name>fs.azure.account.key.<STORAGE_ACCOUNT>.dfs.core.windows.net</name>
+          <name>fs.azure.account.key.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
           <value>${SA_ACCESS_KEY}</value>
         </property>
-
-        <!--
-          <property>
-              <name>fs.azure.account.auth.type.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
-              <value>OAuth</value>
-          </property>
-          <property>
-              <name>fs.azure.account.oauth.provider.type.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
-              <value>org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider</value>
-          </property>
-          <property>
-              <name>fs.azure.account.oauth2.client.id.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
-              <value>${CLIENT_ID}</value>
-          </property>
-          <property>
-              <name>fs.azure.account.oauth2.client.secret.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
-              <value>${CLIENT_SECRET}</value>
-          </property>
-          <property>
-              <name>fs.azure.account.oauth2.client.endpoint.${STORAGE_ACCOUNT}.dfs.core.windows.net</name>
-              <value>https://login.microsoftonline.com/${TENANT_ID}/oauth2/token</value>
-          </property>
-        -->
     </configuration>

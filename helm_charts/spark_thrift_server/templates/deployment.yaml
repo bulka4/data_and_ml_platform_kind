@@ -15,7 +15,8 @@ spec:
       labels:
         app: spark-thrift-server
     spec:
-      serviceAccountName: {{ .Values.spark.serviceAccountName }}
+      # Service Account with permissions for creating pods and pulling images from ACR
+      serviceAccountName: {{ .Values.serviceAccountName }}
       initContainers:
         - name: prepare-configs
           image: alpine:latest
@@ -26,7 +27,7 @@ spec:
               # Install envsubst
               apk add --no-cache gettext
 
-              # Interpolate the template config file (insert values of env vars)
+              # Interpolate template config files (insert values of env vars)
               envsubst < /opt/spark/conf/template/hive-site.xml.template > /opt/spark/conf/hive-site.xml
               envsubst < /opt/spark/conf/template/spark-defaults.conf.template > /opt/spark/conf/spark-defaults.conf
           volumeMounts:
@@ -35,40 +36,22 @@ spec:
             - name: conf
               mountPath: /opt/spark/conf
           env:
-            # Variables with:
-            #   - Servie Principal's client ID and secret
-            #   - Azure Tenant ID
-            #   - Name of the Storage Account
-            # which will be used in the spark-defaults.conf file
-            # - name: CLIENT_ID
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: adls-sp-secret
-            #       key: client-id
-            # - name: CLIENT_SECRET
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: adls-sp-secret
-            #       key: client-secret
-            # - name: TENANT_ID
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: adls-sp-secret
-            #       key: tenant-id
             - name: STORAGE_ACCOUNT
               valueFrom:
                 secretKeyRef:
-                  name: adls-sp-secret
+                  name: {{ .Values.storageAccount.secret}}
                   key: storage-account
             - name: SA_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: adls-sp-secret
+                  name: {{ .Values.storageAccount.secret}}
                   key: sa-access-key
+            - name: CONTAINER
+              value: {{ .Values.storageAccount.container}}
       containers:
         - name: thrift
-          image: {{ .Values.spark.image.url }}
-          imagePullPolicy: {{ .Values.spark.image.pullPolicy }}
+          image: {{ .Values.image.url }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           # Below command starts the Thrift Server and Spark Driver. Driver will be creating executors in separate pods.
           # We use spark-submit instead of start-thriftserver.sh in order to run the Thrift Server in the foreground (there is no child process being created,
           # it runs as PID 1). Thanks to that pod doesn't change status into completed and we can see logs.
@@ -87,12 +70,12 @@ spec:
               --master k8s://https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
               --name spark-thrift-server \
               --conf spark.driver.bindAddress=$POD_IP \
-              --conf spark.driver.host={{ .Values.spark.serviceName }}.{{ .Values.namespace }}.svc.cluster.local \
+              --conf spark.driver.host={{ .Values.serviceName }}.{{ .Values.namespace }}.svc.cluster.local \
               --conf spark.driver.port=7077 \
               --conf spark.blockManager.port=7078 \
               --conf spark.kubernetes.namespace=spark \
-              --conf spark.kubernetes.authenticate.driver.serviceAccountName={{ .Values.spark.serviceAccountName }} \
-              --conf spark.kubernetes.container.image={{ .Values.spark.image.url }} \
+              --conf spark.kubernetes.authenticate.driver.serviceAccountName={{ .Values.serviceAccountName }} \
+              --conf spark.kubernetes.container.image={{ .Values.image.url }} \
               --conf spark.executor.instances=1 \
               --conf spark.executor.memory=1g \
               --conf spark.executor.cores=1 \
@@ -112,8 +95,6 @@ spec:
           volumeMounts:
           - name: conf
             mountPath: /opt/spark/conf
-          - name: warehouse
-            mountPath: /shared/warehouse
           ports:
             - containerPort: 10000
           restartPolicy: Always # Restart the container if it exits
@@ -123,7 +104,3 @@ spec:
           name: spark-conf-template
       - name: conf
         emptyDir: {}
-      # We need to use the same PVC as we used in the Hive Metastore deployment (and mount it to the same folder path)
-      - name: warehouse
-        persistentVolumeClaim:
-          claimName: warehouse-pvc

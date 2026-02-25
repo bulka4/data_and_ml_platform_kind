@@ -1,9 +1,10 @@
+namespace: git-sync
+
 # Parameters for the git-sync deployment. git-sync pulls code from a repo and saves it in the PVC defined in the dags-pvc.yaml.
 # That PVC stores data in Azure File Share and can be then mounted into other pods to make the code available in them. 
 #   - repoURL - URL of the repo with dags code to pull (https://github.com/<org-name>/<repo-name>.git)
 #   - repoName - Name of the repo (<repo-name>.git)
 #   - branch - Branch with code to use
-#   - clonePath - Where to clone code in the git-sync pod (which will be mounted into the PVC)
 #   - storageAccountName - Name of the Azure Storage Account where to save dags code
 #   - fileShareName - Name of the File Share within the Azure Storage Account where to save dags code
 #   - secretName - Name of the secret for accessing Storage Account with File Share. It must contains keys:
@@ -11,9 +12,7 @@
 #       - azurestorageaccountkey - Access key
 repoURL: https://github.com/bulka4/data_and_ml_platform_kind.git
 repoName: data_and_ml_platform_kind.git
-# dagsFolderPath: apps/airflow/dags
 branch: main
-clonePath: /opt/airflow/dags
 storageAccountName: systemfilesbulka
 fileShareName: airflow-dags
-secretName: airflow-azure-blob
+secretName: azure-storage-account

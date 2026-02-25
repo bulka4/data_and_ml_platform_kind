@@ -1,37 +1,35 @@
 namespace: mlflow
-serviceAccountName: mlflow-project-sa
-image: dataanalyticsbulka.azurecr.io/mlflow-project:latest
+# Name of the service account to use with permission to pull images from ACR
+# serviceAccountName: mlflow-project-sa
+# Name of the secret to use for pulling images from ACR
+acrSecret: acr-secret
+# image: dataanalyticsbulka.azurecr.io/mlflow-project:latest
+image: mlflow-project
+imagePullPolicy: IfNotPresent
 
 # Command to execute of the format: "mlflow run <path> -e <entrypoint-name> --<param1> <value1> --env-manager local"
 # - <path> - Path to the MLflow project to run. File share in Azure Storage Account will be mounted to the Job on path
 #             Specified in the 'mountPath' parameter in Job's manifest. So if mountPath = /mnt/mlprojects and project is
 #             the File share at the mlflow_project path, then the <path> parameter here is /mnt/mlprojects/mlflow_project.
 # - <entrypoint-name> - Name of the entrypoint from the MLproject file to run
-# - <param1>, <value1> - Parameter with a value for the entrypoint
+# - <param1>, <value1> - Parameter with a value for the entrypoint (we can provide many parameters one by one)
 # - "--env-manager local" - Indicates to use the local environment. We want to use it because in the Docker image which we
 #                           are using in the Job already contains prepared environment for running the MLflow project.
 # - --experiment-name - Indicates which experiment assign this run to.
 command: "mlflow run /mnt/mlprojects/mlflow_project -e train --env-manager local --experiment-name=lasso_test"
 
 # MLflow server URI. It uses DNS name assigned by the Service linked to the Tracking Server deployment.
-mlflowTrackingUri: http://tracking-server-service.mlflow.svc:5000
+mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
 
-gitSync:
+# Parameters related to git repo from which we pull MLflow code to run:
+# - enabled - Whether or not to pull code from a git repo
+# - url - URL of the repo to pull the code from
+# - path - Path in the repo to the folder with the MLflow project to run (it will be mounted into the /mnt/mlprojects folder)
+# - branch - Branch from which to take the code
+# - commit - Commit from which to take the code (leave blank (commit: "") to take the latest commit)
+git:
   enabled: true
-  repo: https://github.com/bulka4/data_and_ml_platform.git # https://github.com/my-org/my-repo.git
+  url: https://github.com/org/data_and_ml_platform_kind.git
+  path: /apps/mlflow_project
   branch: main
-  rev: HEAD
-  depth: 1
-  subPath: apps/mlflow/project
-  period: 30s
-
-workspace:
-  mountPath: /workspace
-  
-# PVC for code pulled by git-sync
-pvc:
-  enabled: true
-  name: workspace-pvc
-  accessMode: ReadWriteOnce
-  size: 10Gi
-  storageClass: managed-csi
+  commit: ""

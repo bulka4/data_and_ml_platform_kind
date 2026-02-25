@@ -1,17 +1,18 @@
+# Configuration files determining how Spark works, for example which Hive Metastore to use, where the data is stored.
+
 # In pods running the Thrift Server and Hive Metastore, in the `/opt/spark/conf` folder we need to have configuration files:
-# - `hive-site.xml`
+# - hive-site.xml
 
 # For the Thrift Server, we need additionally in the same folder:
-# - `spark-defaults.conf`
+# - spark-defaults.conf
 
 # We create those config files using a ConfigMap and we will mount them into the pods running the Thrift Server and Hive Metastore.
 
-# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` which we will set up in pods where that ConfigMap 
-# will be mounted (it will be done by Spark / Hive inside the image, not Kubernetes).
-
-# - ${CLIENT_ID} and ${CLIENT_SECRET} refers to credentials of a Service Principal with permissions for that Storage Account
-# - ${MY_ACCOUNT} is a name of our Storage Account
-# - ${TENANT_ID} - Our tenant ID from Azure
+# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` using envsubst. We will set up those env vars
+# in pods where that ConfigMap will be mounted:
+# - STORAGE_ACCOUNT - Name of the Storage Account where data warehouse data will be stored
+# - SA_ACCESS_KEY - Access key to the Storage Account where data warehouse data will be stored
+# - CONTAINER - Name of the container in Storage Account where data warehouse data will be stored
 
 apiVersion: v1
 kind: ConfigMap
@@ -21,9 +22,11 @@ data:
   hive-site.xml.template: |
     <configuration>
 
+      <!-- URL of the Hive Metastore. It is of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name -->
+      <!-- of the server running Hive Metastore -->
       <property>
         <name>hive.metastore.uris</name>
-        <value>{{ .Values.hive.metastoreUris }}</value>
+        <value>{{ .Values.hiveMetastoreUris }}</value>
       </property>
 
       <!-- Allow to automatically create partitions -->
@@ -44,7 +47,7 @@ data:
         <value>60</value>
       </property>
 
-      <!-- Dont use Kerberos authentication -->
+      <!-- Dont use Kerberos authentication for connecting to Hive Metastore -->
       <property>
         <name>hive.metastore.sasl.enabled</name>
         <value>false</value>
@@ -57,21 +60,13 @@ data:
     spark.sql.catalogImplementation=hive
     <!-- spark.sql.catalogImplementation=in-memory -->
 
+    <!-- Set the default filesystem. Used when reading / writing data. -->
+    spark.hadoop.fs.defaultFS=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/
+
     <!-- This must match the hive.metastore.warehouse.dir config in Hive Metastore server, hive-site.xml file -->
-    <!-- Specify where the data will be stored -->
-    spark.sql.warehouse.dir={{ .Values.spark.warehouseDir }}
+    <!-- Specify where the warehouse data will be stored -->
+    spark.sql.warehouse.dir={{ .Values.warehouseDir }}
 
-    <!-- Configs for authentication to Azure Storage Account (to be able to read and save data) -->
-    fs.azure.account.key.${STORAGE_ACCOUNT}.dfs.core.windows.net=${SA_ACCESS_KEY}
-
-    <!--
-    spark.hadoop.fs.azure.account.auth.type.${STORAGE_ACCOUNT}.dfs.core.windows.net=OAuth
-
-    spark.hadoop.fs.azure.account.oauth.provider.type.${STORAGE_ACCOUNT}.dfs.core.windows.net=org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider
-
-    spark.hadoop.fs.azure.account.oauth2.client.id.${STORAGE_ACCOUNT}.dfs.core.windows.net=${CLIENT_ID}
-
-    spark.hadoop.fs.azure.account.oauth2.client.secret.${STORAGE_ACCOUNT}.dfs.core.windows.net=${CLIENT_SECRET}
-
-    spark.hadoop.fs.azure.account.oauth2.client.endpoint.${STORAGE_ACCOUNT}.dfs.core.windows.net=https://login.microsoftonline.com/${TENANT_ID}/oauth2/token
-    -->
+    <!-- Configs for authentication to Azure Storage Account (to be able to read and save data). STORAGE_ACCOUNT is a name of the Storage Account -->
+    <!-- to use and SA_ACCESS_KEY is an access key to it. -->
+    spark.hadoop.fs.azure.account.key.${STORAGE_ACCOUNT}.dfs.core.windows.net=${SA_ACCESS_KEY}

@@ -1,0 +1,40 @@
+# This is a PVC used to store code pulled from a repo by git-sync. It uses Azure File Share as data storage. It supports RWX access mode
+# so this PV can be mounted into many pods on different nodes.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: code-pv
+  namespace: {{ .Values.namespace }}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: file.csi.azure.com  # Driver for Azure File Share
+    volumeHandle: {{ .Values.storageAccountName }}#{{ .Values.fileShareName }}
+    volumeAttributes:
+      shareName: {{ .Values.fileShareName }}
+      storageAccount: {{ .Values.storageAccountName }}
+    # Secret with the following keys:
+    #   - azurestorageaccountname - Storage Account name
+    #   - azurestorageaccountkey - Access key
+    nodeStageSecretRef:
+      name: {{ .Values.secretName }}
+      namespace: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: code-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: code-pv

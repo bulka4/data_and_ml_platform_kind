@@ -1,12 +1,12 @@
-# This is a deployment running git-sync which pulls code from a repo and saves it in a persistent volume (PV) which is then mounted into Airflow pods.
+# This is a deployment running git-sync which pulls code from a repo and saves it in a persistent volume (PV) which can be then mounted into pods.
 # We use Azure File Share for PV which doesn't support setting file permissions while git-sync tries to do that. That's why git-sync can't pull code
-# directly into the PV but it needs to pull it into an ephemeral volume first.
+# directly into the PV but it needs to pull it into an ephemeral volume first and then we copy that code into the PV.
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: git-sync
-  namespace: airflow
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -18,17 +18,19 @@ spec:
         app: git-sync
     spec:
       containers:
+          # Git pulls code to an ephemeral volume to avoid issues with file permissions. We copy that code in the 'copier' container
+          # into the PV (Azure File Share)
         - name: git-sync
           image: registry.k8s.io/git-sync/git-sync:v4.5.0
           env:
             - name: GITSYNC_REPO
-              value: {{ .Values.gitSync.repoURL }}
+              value: {{ .Values.repoURL }}
             - name: GIT_SYNC_BRANCH
-              value: {{ .Values.gitSync.branch }}
+              value: {{ .Values.branch }}
             # choose as the destination folder a folder which is not the root folder of the mounted volume but a subfloder to avoid
             # permission errors
             - name: GITSYNC_ROOT
-              value: /tmp/dags
+              value: /tmp
             - name: GIT_SYNC_WAIT
               value: "60"   # sync interval in seconds
             # Don't set up file permissions, since we are mounting a PV which uses Azure File Share and there are no file permissions
@@ -37,10 +39,11 @@ spec:
             # Run git-sync as a non-root user so we don't get problems with file permissions
             - name: GITSYNC_ADD_USER
               value: "true"
+          # Use an ephemeral volume
           volumeMounts:
-            - name: tmp-dags
-              mountPath: /tmp/dags
-        # Container which copies code pulled by git-sync into PV
+            - name: tmp
+              mountPath: /tmp
+        # Container which copies code pulled by git-sync from an ephemeral volume into  the PV (Azure File Share)
         - name: copier
           image: alpine:3.19
           command:
@@ -53,20 +56,19 @@ spec:
               while true; do
                 # Copy file differences from ephemeral clone to RWX PV
                 # Remove files at target which are not present at the source anymore
-                rsync -a --delete /tmp/dags/{{ .Values.gitSync.repoName }}/{{ .Values.gitSync.dagsFolderPath }}/ /opt/airflow/dags/
+                rsync -a --delete /tmp/{{ .Values.repoName }}/ /opt/{{ .Values.repoName }}/
                 sleep 60
               done
           volumeMounts:
-            - name: tmp-dags
-              mountPath: /tmp/dags
-            - name: dags
-              mountPath: /opt/airflow/dags
-              #subPath: dags
+            - name: tmp
+              mountPath: /tmp
+            - name: repo
+              mountPath: /opt/{{ .Values.repoName }}
       volumes:
         # Temporary volume for code pulled by git-sync
-        - name: tmp-dags
+        - name: tmp
           emptyDir: {}
         # Azure File Share PV where code will be saved and can be mounted to other pods
-        - name: dags
+        - name: repo
           persistentVolumeClaim:
-            claimName: airflow-dags-pvc
+            claimName: code-pvc

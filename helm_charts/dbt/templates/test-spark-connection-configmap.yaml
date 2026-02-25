@@ -17,7 +17,7 @@ data:
     try:
         conn = hive.Connection(host=host, port=port)
         cursor = conn.cursor()
-        cursor.execute("select * from fact.model")
+        cursor.execute("select * from dwh_fact.model")
         results = cursor.fetchall()
 
         print("Connection successful!")

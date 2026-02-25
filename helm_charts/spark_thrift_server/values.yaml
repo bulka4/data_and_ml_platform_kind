@@ -1,26 +1,26 @@
 # Variables for Spark Thrift Server
 namespace: spark
 
-spark:
-  image:
-    # URL of the Spark Docker image from a container registry
-    url: spark-thrift-server:latest
-    pullPolicy: IfNotPresent
-  serviceAccountName: spark-thrift-sa
-  serviceName: spark-thrift-server
-  # Storage Account and container for storing data used by Spark
-  # storageAccountName: dwhbulka
-  # containerName: dwh
-  storageAccountSecret: adls-sp-secret
-  # This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
-  warehouseDir: abfss://<CONTAINER>@<STORAGE_ACCOUNT>.dfs.core.windows.net/hive-warehouse
+image:
+  # URL of the Spark Docker image from a container registry (with a tag)
+  url: spark-thrift-server:latest
+  pullPolicy: IfNotPresent
+serviceAccountName: spark-thrift-sa # Name of the service account we will create
+serviceName: spark-thrift-server    # Name of the service we will create
+# Name of the Storage Account and container for storing data warehouse data used by Spark
+storageAccount:
+    # Name of the Kubernetes secret with the following keys:
+    #   - storage-account - Name of the Storage Account to use
+    #   - sa-access-key - Access key to the Storage Account
+  secret: adls-sp-secret
+  container: dwh
+# Folder where to keep data warehouse data use by Spark.
+# This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
+warehouseDir: abfss://dwh@dwhbulka.dfs.core.windows.net/hive-warehouse
 
-# Variables for Hive Metastore
-hive:
-  # URL of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name of the server running Hive Metastore
-  # If we have many metastores, we can provide multiple URLs: url_1,url2,...
-  metastoreUris: thrift://hive-metastore:9083 
+# URL of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name of the server running Hive Metastore
+# If we have many metastores, we can provide multiple URLs: url_1,url2,...
+hiveMetastoreUris: thrift://hive-metastore:9083 
 
-# Variables related to the ACR where we keep Docker images which will be deployed in pods
-acrSecret:
-  secretName: acr-secret
+# Name of the secret with credentials to the ACR where we keep Docker images which will be deployed in pods
+acrSecretName: acr-secret

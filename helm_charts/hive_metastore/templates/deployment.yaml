@@ -17,22 +17,16 @@ spec:
       # imagePullSecrets:
       #   - name: {{ .Values.acrSecret.secretName }}
       initContainers:
-        - name: fix-tmp-permissions
+        - name: prepare-configs
           image: alpine:latest
           command:
             - sh
             - -c
-            - |
-              # Set required permissions (every user will be able to write, read and execute files from this folder).
-              # Looks like for now it is not needed.
-              # chmod -R 755 /tmp/hive || true
-              # chown -R hive:hive /opt/hive || true
-              # chmod -R 755 /opt/hive || true
-              
+            - |              
               # Install envsubst
               apk add --no-cache gettext
 
-              # Interpolate the template config file (insert values of env vars)
+              # Interpolate template config files (insert values of env vars)
               envsubst < /opt/hive/conf/template/hive-site.xml.template > /opt/hive/conf/hive-site.xml
               envsubst < /opt/hive/conf/template/core-site.xml.template > /opt/hive/conf/core-site.xml
           volumeMounts:
@@ -49,26 +43,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.postgresql.secret.name }}
                   key: {{ .Values.postgresql.secret.userPasswordKey }}
-            # Variables with:
-            #   - Servie Principal's client ID and secret
-            #   - Azure Tenant ID
-            #   - Name of the Storage Account
-            # which will be used in the core-site.xml file in the configMap
-            # - name: CLIENT_ID
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: {{ .Values.hive.storageAccount.secret }}
-            #       key: client-id
-            # - name: CLIENT_SECRET
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: {{ .Values.hive.storageAccount.secret }}
-            #       key: client-secret
-            # - name: TENANT_ID
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: {{ .Values.hive.storageAccount.secret }}
-            #       key: tenant-id
             - name: STORAGE_ACCOUNT
               valueFrom:
                 secretKeyRef:
@@ -83,7 +57,7 @@ spec:
               value: {{ .Values.hive.storageAccount.container }}
       containers:
         - name: hive-metastore
-          image: "{{ .Values.hive.image.url }}:{{ .Values.hive.image.tag }}"
+          image: "{{ .Values.hive.image.url }}"
           imagePullPolicy: {{ .Values.hive.image.pullPolicy }}
           # command: ["sh", "-c", "sleep 3600"]
           ports:
@@ -101,14 +75,12 @@ spec:
             # Run only Metastore
             - name: SERVICE_NAME
               value: metastore
-          # Mount the hive-site.xml created in the ConfigMap
+          # Mount the config files created in the ConfigMap
           volumeMounts:
             - name: hive-conf
               mountPath: /opt/hive/conf
             - name: tmp-volume
               mountPath: /tmp/hive
-            - name: warehouse
-              mountPath: /shared/warehouse
           resources:
             requests:
               memory: {{ .Values.hive.resources.requests.memory }}
@@ -124,7 +96,3 @@ spec:
           emptyDir: {}
         - name: hive-conf
           emptyDir: {}
-        # The same warehouse-pvc needs to be used in the Hive Metastore (and mounted to the same folder path)
-        - name: warehouse
-          persistentVolumeClaim:
-            claimName: warehouse-pvc

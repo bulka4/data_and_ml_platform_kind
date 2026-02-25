@@ -3,11 +3,17 @@
 
 FROM python:3.9-slim
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    default-libmysqlclient-dev \
-    gcc \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+# Install tools needed (looks like they are not needed):
+#   - build-essential, libpq-dev and gcc - Needed to compile psycopg2
+#   - pkg-config - A helper tool to find metadata about installed libraries (like compiler flags and linker flags). Used by mysqlclient
+# RUN apt-get update && apt-get install -y \
+#     build-essential \
+#     libpq-dev \
+#     gcc \
+#     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install mlflow[extras] azure-storage-blob azure-identity pymysql mysqlclient
+# Install pip packages needed:
+#   - mlflow[extras] - Using MLflow
+#   - azure-storage-blob, azure-identity - Connecting to Azure Storage Account 
+#   - psycopg2-binary - Connecting to PostgreSQL
+RUN pip install mlflow[extras] azure-storage-blob azure-identity psycopg2-binary

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: git-sync
+description: |
+  Running git-sync which pulls code from a specified repo and saves it in a PV (which uses Azure File Share for storage).
+type: application
+version: 0.1.0
+appVersion: "3.1.3"

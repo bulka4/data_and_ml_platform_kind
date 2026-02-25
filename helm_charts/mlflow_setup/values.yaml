@@ -1,58 +1,50 @@
 # General namespace for all resources
 namespace: mlflow
 
-# Parameters for installing MySQL dependency:
-mysql:
-  fullnameOverride: mysql # Name of the created resource
-  primary:
-    persistence:
-      enabled: true
-      existingClaim: mysql-pvc # We will create this volume in this chart as well.
-      storageClass: ""
-  auth:
-    # Create a new user. This is needed so MLflow Tracking Server can connect
-    database: mlflow # DB that will be created
-    username: mlflow # custom user
-    secretName: mlflow-mysql  # Name of the secret with credentials for the above user
-    userPasswordSecretKey: user_password # Name of the key in the secret with the password of the user
-
-# Storage class for PVC for MySQL backend store. The 'managed-csi' option causes that data will be stored in an Azure Disk. It will be created on 
-# demand when creating this volume and deleted when deleting the Volume. It is used in the tracking_server > mysql-pvc.yaml template.
-mySqlMounting:
-  storageClass: managed-csi
+# Parameters for PostgreSQL db:
+#   - username: Username for the user to create
+#   - secret.name: Name of the secret with the password for the user to create
+#   - secret.userPasswordKey: Name of the key in the secret with the password for the user to create.
+#         This is a password for the POSTGRES_PASSWORD env var in PostgreSQL pod
+#   - secret.adminPasswordKey: Name of the key in the secret with the password for the admin user.
+#         This is a password for the POSTGRES_POSTGRES_PASSWORD env var in PostgreSQL pod
+#   - serviceName: Name of the service to create
+#   - database: Name of the database to create
+postgres:
+  image: public.ecr.aws/bitnami/postgresql:12
+  username: mlflow
+  secret:
+    name: postgres-backend-store
+    userPasswordKey: user-password
+    adminPasswordKey: admin-password
+  serviceName: postgres
+  database: mlflow
 
 # MLflow configuration. Here we have the following values:
-# - trackingServerSecretName - Name of the secret with values used by the Tracking Server to connect to the backend and artifact store
 # - serviceAccountName - Name of the Service Account used in the Job running the MLflow project
-# - trackingServerServiceName - Name of the Service which Tracking Server deployment will be using
-# - Parameters related to the Azure Storage Account which will serve as an artifact store:
-#   - azureConnectionString - Connection string to the Storage Account. It will be stored in the trackingServerSecretName secret.
-#   - mlflowStorageAccountName - Name of the Storage Account. Used in the Tracking Server Deployment.
-#   - mlflowContainerName - Name of the container in the Storage Account which will be used. Used in the Tracking Server Deployment.
-mlflow:
-  # trackingServerSecretName: mlflow-ts-secret
-  serviceAccountName: mlflow-project-sa
-  trackingServerServiceName: tracking-server-service
-  
-# Variables related to the Storage Account and container used as an artifact store
-storageAccount:
-  name: dwhbulka            # Name of the Storage Account
-  containerName: mlflow              # Name of the container in the Storage Account
-  secretName: mlflow-sa                   # Name of the secret with an access key to the Storage Account
-  accessKeySecretKey: access_key # Name of the secret key with the Storage Account access key
-
-
-# Information about ACR and images it contains:
-#   - URL - ACR URL (<registry-name>.azurecr.io)
-#   - trackingServerImageName - Name of the image used for the MLflow Tracking Server
-#   - secretName - Name of the secret used for authentication when accessing ACR. It needs to be created like that:
+# - serviceName - Name of the Service which Tracking Server deployment will be using
+# - url - URL of the image to use (or name of the local image)
+# - pullPolicy - ImagePullPolicy for the deployment
+# - secretName - Name of the secret used for authentication when accessing ACR. It needs to be created like that:
         # kubectl create secret docker-registry acr-secret \
         #     --namespace <namespace> \
         #     --docker-server=<acr_url> \ # ACR URL (<registry-name>.azurecr.io) 
         #     --docker-username=<client_id> \  # That can be Service Principal client ID
         #     --docker-password=<client_secret> \  # That can be Service Principal secret
         #     --docker-email=unused@example.com # It doesn't matter what we put here but it is needed
-acr:
-  url: dataanalyticsbulka.azurecr.io
-  trackingServerImageName: mlflow-tracking-server
-  secretName: acr-secret
+mlflow:
+  image:
+    url: mlflow-tracking-server
+    # url: dataanalyticsbulka.azurecr.io/mlflow-tracking-server
+    pullPolicy: IfNotPresent
+    secretName: acr-secret  # secret for pulling images from ACR
+  serviceAccountName: mlflow-project-sa
+  serviceName: tracking-server
+
+# Variables related to the Storage Account and container used as an artifact store
+storageAccount:
+  name: dwhbulka        # Name of the Storage Account
+  containerName: mlflow # Name of the container in the Storage Account
+  secret:
+    name: artifact-store  # Name of the secret with an access key to the Storage Account
+    key: sa-access-key    # Name of the secret key with the Storage Account access key

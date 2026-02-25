@@ -3,37 +3,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hive-postgres
+  name: postgres
   namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hive-postgres
+      app: postgres
   template:
     metadata:
       labels:
-        app: hive-postgres
+        app: postgres
     spec:
       containers:
         - name: postgres
-          image: {{ .Values.postgresql.image }}
+          image: {{ .Values.postgres.image }}
           env:
             # Env vars for creating a database and user used by Hive
             - name: POSTGRES_USER
-              value: {{ .Values.postgresql.username }}
+              value: {{ .Values.postgres.username }}
             - name: POSTGRES_DB
-              value: {{ .Values.postgresql.database }}
+              value: {{ .Values.postgres.database }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.postgresql.secret.name }}
-                  key: {{ .Values.postgresql.secret.userPasswordKey }}
+                  name: {{ .Values.postgres.secret.name }}
+                  key: {{ .Values.postgres.secret.userPasswordKey }}
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.postgresql.secret.name }}
-                  key: {{ .Values.postgresql.secret.adminPasswordKey }}
+                  name: {{ .Values.postgres.secret.name }}
+                  key: {{ .Values.postgres.secret.adminPasswordKey }}
           ports:
             - containerPort: 5432
           volumeMounts:
