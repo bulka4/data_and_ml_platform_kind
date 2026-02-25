@@ -5,6 +5,9 @@ from sklearn.model_selection import train_test_split
 import mlflow
 import argparse
 
+
+print("Started training")
+
 # -----------------------------
 # Parse arguments
 # -----------------------------
@@ -12,8 +15,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--alpha", type=float, required=True, help="The alpha parameter for the sklearn.linear_model.Lasso model.")
 parser.add_argument("--max_iter", type=int, required=True, help="The max_iter parameter for the sklearn.linear_model.Lasso model.")
 args = parser.parse_args()
-
-print("Started training")
 # -----------------------------
 # Generate some sample data
 # -----------------------------
