@@ -20,25 +20,6 @@ spec:
       - name: repo
         emptyDir: {}
 
-      {{- if .Values.git.enabled }}
-      initContainers:
-        - name: git-pull-code
-          image: alpine/git
-          command:
-            - sh
-            - -c
-            - |
-              git clone {{ .Values.git.url }} /repo
-              cd /repo
-              git checkout -b {{ .Values.git.branch }}
-              {{- if .Values.git.commit }}
-              git checkout {{ .Values.git.commit }}
-              {{- end}}
-          volumeMounts:
-            - name: repo
-              mountPath: /repo
-      {{- end }}
-
       containers:
         - name: mlflow-job
           image: {{ .Values.image }}
@@ -51,11 +32,4 @@ spec:
           # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
           - name: MLFLOW_TRACKING_URI
             value: {{ .Values.mlflowTrackingUri }}
-          {{- if .Values.git.enabled }}
-          volumeMounts:
-            # Mount a volume with MLflow project script pulled from the repo by git-sync
-            - name: repo
-              mountPath: /mnt/mlproject
-              subPath: {{ .Values.git.path }}
-          {{- end }}
       restartPolicy: Never

@@ -6,10 +6,19 @@ metadata:
   name: {{ .Values.mlflow.serviceName }}
   namespace: {{ .Values.namespace }}
 spec:
-  type: LoadBalancer  # Or use Ingress
+  # type: LoadBalancer  # Or use Ingress
   # type: ClusterIP # ClusterIP will be only for connectivity from inside of the cluster
+  
+  # Use the NodePort as a service for the web server, so we can access it through the browser from the host. We also need to map the nodePort
+  # to the host port in the kind-config.yaml file.
+  # So traffic will go like that: 
+  #   - host port (port on the host specified in the kind-config.yaml) -> 
+  #   - container port / node port (port in the kind node container, specified in the kind-config.yaml as containerPort and here as nodePort) ->
+  #   - target port (port in the container running in the kind cluster, specified here)
+  type: NodePort
+  ports:
+    - port: 5000          # service port (used inside the cluster)
+      targetPort: 5000    # container port
+      nodePort: 30050     # node port
   selector:
     app: mlflow
-  ports:
-  - port: 5000
-    targetPort: 5000

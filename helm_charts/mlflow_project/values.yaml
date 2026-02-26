@@ -15,20 +15,7 @@ imagePullPolicy: IfNotPresent
 # - "--env-manager local" - Indicates to use the local environment. We want to use it because in the Docker image which we
 #                           are using in the Job already contains prepared environment for running the MLflow project.
 # - --experiment-name - Indicates which experiment assign this run to.
-command: "mlflow run https://github.com/bulka4/data_and_ml_platform_kind.git/apps/mlflow_project -e train --env-manager local --experiment-name=lasso_test"
+command: "mlflow run https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_project -e train --env-manager local --experiment-name=lasso_test"
 
 # MLflow server URI. It uses DNS name assigned by the Service linked to the Tracking Server deployment.
 mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
-
-# Parameters related to git repo from which we pull MLflow code to run:
-# - enabled - Whether or not to pull code from a git repo
-# - url - URL of the repo to pull the code from
-# - path - Path in the repo to the folder with the MLflow project to run (it will be mounted into the /mnt/mlprojects folder)
-# - branch - Branch from which to take the code
-# - commit - Commit from which to take the code (leave blank (commit: "") to take the latest commit)
-git:
-  enabled: false
-  url: https://github.com/bulka4/data_and_ml_platform_kind.git
-  path: apps/mlflow_project
-  branch: main
-  commit: ""

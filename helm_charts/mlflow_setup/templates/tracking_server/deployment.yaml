@@ -56,8 +56,12 @@ spec:
             export AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=${STORAGE_ACCOUNT_NAME};AccountKey=${STORAGE_ACCOUNT_ACCESS_KEY};EndpointSuffix=core.windows.net"
 
             # Use 'exec' for the mlflow process to become the PID 1 (to make sure that Kubernetes can stop that process easily)
+            # Set up --workers to 1 to create only one worker process to avoid memory issues
+            # Use "wasbs" URL for Storage Account used for --artifacts-destination. Thanks to that we can use the AZURE_STORAGE_CONNECTION_STRING env var 
+            # and azure-storage-blob pip package for connecting and authentication (it works for both Blob Storage and ADLS Gen2).
             exec mlflow server \
               --host 0.0.0.0 \
               --port 5000 \
+              --workers 1 \
               --backend-store-uri "$DB_URI" \
-              --artifacts-destination "abfss://{{ .Values.storageAccount.containerName }}@{{ .Values.storageAccount.name }}.blob.core.windows.net/"
+              --artifacts-destination "wasbs://{{ .Values.storageAccount.containerName }}@${STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
