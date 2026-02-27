@@ -22,7 +22,7 @@ spec:
           git checkout {{ .Values.git.commit }}
           {{- end }}
       volumeMounts:
-        - name: git-code
+        - name: git-repo
           mountPath: /repo
 
   containers:
@@ -50,6 +50,6 @@ spec:
           subPath: {{ .Values.git.path }}
           
   volumes:
-    - name: git-code
+    - name: git-repo
       emptyDir: {}
   restartPolicy: Never
