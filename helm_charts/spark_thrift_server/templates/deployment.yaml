@@ -28,7 +28,7 @@ spec:
               apk add --no-cache gettext
 
               # Interpolate template config files (insert values of env vars)
-              envsubst < /opt/spark/conf/template/hive-site.xml.template > /opt/spark/conf/hive-site.xml
+              # envsubst < /opt/spark/conf/template/hive-site.xml.template > /opt/spark/conf/hive-site.xml
               envsubst < /opt/spark/conf/template/spark-defaults.conf.template > /opt/spark/conf/spark-defaults.conf
           volumeMounts:
             - name: spark-conf-template
@@ -65,6 +65,10 @@ spec:
             - /bin/bash
             - -c
             - |
+              # download a jar needed to use Iceberg. Save it in the /opt/spark/jars as Spark pick up jars from this folder automatically.
+              wget -P /opt/spark/jars/ https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.9.2/iceberg-spark-runtime-3.5_2.12-1.9.2.jar
+
+
               /opt/spark/bin/spark-submit \
               --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2 \
               --master k8s://https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \

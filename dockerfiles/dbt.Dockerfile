@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir \
     thrift \
     thrift-sasl
 
-WORKDIR /workspace
+WORKDIR /root/workspace

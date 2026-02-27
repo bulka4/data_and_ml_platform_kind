@@ -16,11 +16,15 @@ storageAccount:
   container: dwh
 # Folder where to keep data warehouse data use by Spark.
 # This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
-warehouseDir: abfss://dwh@dwhbulka.dfs.core.windows.net/hive-warehouse
+# warehouseDir: abfss://dwh@dwhbulka.dfs.core.windows.net/iceberg-warehouse/
 
 # URL of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name of the server running Hive Metastore
 # If we have many metastores, we can provide multiple URLs: url_1,url2,...
-hiveMetastoreUris: thrift://hive-metastore:9083 
+# hiveMetastoreUris: thrift://hive-metastore:9083
+
+# Name of the folder in Azure Storage Account where to create an Iceberg catalog
+iceberg:
+  catalogFolder: iceberg-warehouse
 
 # Name of the secret with credentials to the ACR where we keep Docker images which will be deployed in pods
 acrSecretName: acr-secret

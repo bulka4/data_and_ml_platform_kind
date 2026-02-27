@@ -1,0 +1,12 @@
+my_spark_project:
+  target: dev
+  outputs:
+    dev:
+      type: spark
+      method: thrift            # Use the Thrift protocol for connecting to the Spark Thrift Server
+      host: spark-thrift-server
+      port: 10000
+      user: ""
+      schema: dwh           # Iceberg schema where to save created tables
+      connect_timeout: 30
+      retries: 3

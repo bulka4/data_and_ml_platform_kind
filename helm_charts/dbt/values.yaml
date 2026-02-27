@@ -1,0 +1,10 @@
+# Parameters related to pulling dbt code from a git repo:
+#   - url - URL of the repo from which to pull code
+#   - branch - Branch from which to take the code
+#   - commit - Commit from which to take the code
+#   - path  - Path in the repo to the folder with dbt code
+git:
+  url: https://github.com/bulka4/data_and_ml_platform_kind.git
+  branch: main
+  commit: ""
+  path: apps/dbt

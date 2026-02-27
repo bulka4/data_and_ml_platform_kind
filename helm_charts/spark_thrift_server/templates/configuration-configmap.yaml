@@ -1,12 +1,7 @@
-# Configuration files determining how Spark works, for example which Hive Metastore to use, where the data is stored.
+# This ConfigMap prepares a spark-defaults.conf configuration file determining how Spark works. We define here for 
+# example to use Iceberg or where the data is stored.
 
-# In pods running the Thrift Server and Hive Metastore, in the `/opt/spark/conf` folder we need to have configuration files:
-# - hive-site.xml
-
-# For the Thrift Server, we need additionally in the same folder:
-# - spark-defaults.conf
-
-# We create those config files using a ConfigMap and we will mount them into the pods running the Thrift Server and Hive Metastore.
+# This config file needs to be saved in the /opt/spark/conf folder, in the Thrift Server pod by mounting this ConfigMap.
 
 # Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` using envsubst. We will set up those env vars
 # in pods where that ConfigMap will be mounted:
@@ -19,54 +14,27 @@ kind: ConfigMap
 metadata:
   name: spark-conf-template
 data:
-  hive-site.xml.template: |
-    <configuration>
-
-      <!-- URL of the Hive Metastore. It is of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name -->
-      <!-- of the server running Hive Metastore -->
-      <property>
-        <name>hive.metastore.uris</name>
-        <value>{{ .Values.hiveMetastoreUris }}</value>
-      </property>
-
-      <!-- Allow to automatically create partitions -->
-      <property>
-        <name>hive.exec.dynamic.partition</name>
-        <value>true</value>
-      </property>
-
-      <!-- All partition columns can be dynamic. Fully automatic partition creation. -->
-      <property>
-        <name>hive.exec.dynamic.partition.mode</name>
-        <value>nonstrict</value>
-      </property>
-
-      <!-- How long clients wait for a response from the metastore before timing out -->
-      <property>
-        <name>hive.metastore.client.socket.timeout</name>
-        <value>60</value>
-      </property>
-
-      <!-- Dont use Kerberos authentication for connecting to Hive Metastore -->
-      <property>
-        <name>hive.metastore.sasl.enabled</name>
-        <value>false</value>
-      </property>
-
-    </configuration>
-
   spark-defaults.conf.template: |
-    <!-- Use Hive Metastore or the in-memory catalog -->
-    spark.sql.catalogImplementation=hive
-    <!-- spark.sql.catalogImplementation=in-memory -->
-
-    <!-- Set the default filesystem. Used when reading / writing data. -->
+    # Set the default filesystem. Used when reading / writing data.
     spark.hadoop.fs.defaultFS=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/
 
-    <!-- This must match the hive.metastore.warehouse.dir config in Hive Metastore server, hive-site.xml file -->
-    <!-- Specify where the warehouse data will be stored -->
-    spark.sql.warehouse.dir={{ .Values.warehouseDir }}
-
-    <!-- Configs for authentication to Azure Storage Account (to be able to read and save data). STORAGE_ACCOUNT is a name of the Storage Account -->
-    <!-- to use and SA_ACCESS_KEY is an access key to it. -->
+    # Configs for authentication to Azure Storage Account (to be able to read and save data). STORAGE_ACCOUNT is a name of the Storage Account
+    # to use and SA_ACCESS_KEY is an access key to it.
     spark.hadoop.fs.azure.account.key.${STORAGE_ACCOUNT}.dfs.core.windows.net=${SA_ACCESS_KEY}
+
+    # Download Iceberg runtime jar. Version must match:
+    #   - Spark version 3.5
+    #   - Scala version 2.12
+    #   - Iceberg version 1.9.2 (must be compatible with the Spark version)
+    # spark.jars.packages=org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.2
+    
+    # Add additional iceberg extensions providing additional functionalities (e.g. merge, time travel)
+    spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    
+    # Define Iceberg catalog (called "iceberg_catalog", this is a name we can choose here)
+    spark.sql.catalog.iceberg_catalog=org.apache.iceberg.spark.SparkCatalog
+    spark.sql.catalog.iceberg_catalog.type=hadoop
+    spark.sql.catalog.iceberg_catalog.warehouse=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/{{ .Values.iceberg.catalogFolder }}/
+
+    # Set up the iceberg_catalog as a default catalog. When we create a table without specifying a catalog, this catalog will be used.
+    spark.sql.defaultCatalog=iceberg_catalog
