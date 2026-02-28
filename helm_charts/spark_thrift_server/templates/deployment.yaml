@@ -39,15 +39,15 @@ spec:
             - name: STORAGE_ACCOUNT
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.storageAccount.secret}}
+                  name: {{ .Values.storageAccount.secret }}
                   key: storage-account
             - name: SA_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.storageAccount.secret}}
+                  name: {{ .Values.storageAccount.secret }}
                   key: sa-access-key
             - name: CONTAINER
-              value: {{ .Values.storageAccount.container}}
+              value: {{ .Values.storageAccount.container }}
       containers:
         - name: thrift
           image: {{ .Values.image.url }}
@@ -84,6 +84,10 @@ spec:
               --conf spark.executor.memory=1g \
               --conf spark.executor.cores=1 \
               --conf spark.sql.shuffle.partitions=200 \
+              --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
+              --conf spark.sql.catalog.iceberg_catalog=org.apache.iceberg.spark.SparkCatalog \
+              --conf spark.sql.catalog.iceberg_catalog.type=hadoop \
+              --conf spark.sql.catalog.iceberg_catalog.warehouse=abfss://{{ .Values.storageAccount.container }}@{{ .Values.storageAccount.name }}.dfs.core.windows.net/{{ .Values.iceberg.catalogFolder }} \
               local:///opt/spark/jars/spark-hive-thriftserver_2.12-3.5.0.jar
           env:
             - name: SPARK_HOME

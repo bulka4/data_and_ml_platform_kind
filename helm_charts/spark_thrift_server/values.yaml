@@ -13,6 +13,7 @@ storageAccount:
     #   - storage-account - Name of the Storage Account to use
     #   - sa-access-key - Access key to the Storage Account
   secret: adls-sp-secret
+  name: dwhbulka
   container: dwh
 # Folder where to keep data warehouse data use by Spark.
 # This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
