@@ -6,13 +6,17 @@ FROM python:3.10-slim
 #   - dbt-spark[PyHive] - So we can use the 'thrift' method in the profiles.yml
 #   - dbt-spark[session] - So we can use the 'session' method in the profiles.yml
 #   - pyhive, thrift, thrift-sasl - For dbt to connect to the Spark Thrift server
-#   - nano - For testing and debugging
 RUN pip install --no-cache-dir \
     dbt-spark[PyHive] \
     dbt-spark[session] \
     pyhive \
     thrift \
-    thrift-sasl \
+    thrift-sasl
+
+# Install tools:
+#   - nano - for testing and debugging
+RUN apt-get update && \
+    apt-get install -y \
     nano
 
 WORKDIR /root/workspace

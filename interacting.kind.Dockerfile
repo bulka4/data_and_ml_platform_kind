@@ -94,7 +94,7 @@ COPY dockerfiles /root/dockerfiles
 RUN <<EOF cat > /root/dockerfiles/build_and_load.sh
 docker build -t $AIRFLOW_IMAGE_NAME -f dockerfiles/airflow.Dockerfile dockerfiles
 docker build -t $AIRFLOW_DAG_IMAGE_NAME -f dockerfiles/airflow.dag.Dockerfile dockerfiles
-docker build -t $SPARK_IMAGE_NAME -f dockerfiles/spark.thrift.server.Dockerfile dockerfiles
+docker build -t $SPARK_IMAGE_NAME -f dockerfiles/spark/spark.thrift.server.Dockerfile dockerfiles/spark
 docker build -t $HIVE_IMAGE_NAME -f dockerfiles/hive/hive.Dockerfile dockerfiles/hive
 docker build -t $DBT_IMAGE_NAME -f dockerfiles/dbt.Dockerfile dockerfiles
 docker build -t $MLFLOW_PROJECT_IMAGE_NAME -f dockerfiles/mlflow_project/mlflow.project.Dockerfile dockerfiles/mlflow_project

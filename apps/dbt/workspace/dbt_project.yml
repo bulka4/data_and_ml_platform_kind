@@ -25,6 +25,6 @@ models:
   data_warehouse:
     # Set up configs for models from the models/dwh_fact folder.
     dwh_fact:
-      +database: iceberg_catalog  # Name of the catalog to use. It is optional if defaultCatalog is not set in spark-defaults.conf
+      # +database: iceberg_catalog  # Name of the catalog to use. It looks like it doesn't work.
       +schema: fact               # schema where models will be saved.
       +materialized: table        # How to save models. It can be 'table' or a 'view'.

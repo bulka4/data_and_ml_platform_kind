@@ -37,4 +37,4 @@ data:
     spark.sql.catalog.iceberg_catalog.warehouse=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/{{ .Values.iceberg.catalogFolder }}/
 
     # Set up the iceberg_catalog as a default catalog. When we create a table without specifying a catalog, this catalog will be used.
-    # spark.sql.defaultCatalog=iceberg_catalog
+    spark.sql.defaultCatalog=iceberg_catalog

@@ -3,8 +3,8 @@ my_spark_project:
   outputs:
     dev:
       type: spark
-      #method: thrift            # Use the Thrift protocol for connecting to the Spark Thrift Server
-      method: session
+      method: thrift            # Use the Thrift protocol for connecting to the Spark Thrift Server
+      # method: session
       host: spark-thrift-server
       port: 10000
       user: ""
