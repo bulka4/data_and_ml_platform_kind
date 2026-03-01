@@ -44,8 +44,8 @@ with DAG(
 
     task = KubernetesPodOperator(
         task_id="dbt_task"
-        ,name="dbt"
-        ,namespace="spark"
+        # ,name="dbt"
+        # ,namespace="spark"
         ,pod_template_file="dbt.yaml"  # full pod manifest
         ,get_logs=True
         ,is_delete_operator_pod=False # don't delete the pod once the task is finished

@@ -17,6 +17,9 @@ airflow:
       value: "false"
     - name: AIRFLOW__KUBERNETES_EXECUTOR__NAMESPACE
       value: airflow
+    # Add more logs for debugging
+    - name: AIRFLOW__LOGGING__LOGGING_LEVEL
+      value: DEBUG
     # Saving logs to Azure Storage Account
     - name: AIRFLOW__LOGGING__REMOTE_LOGGING
       value: "True"
