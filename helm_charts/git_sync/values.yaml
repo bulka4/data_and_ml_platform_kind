@@ -5,14 +5,16 @@ namespace: git-sync
 #   - repoURL - URL of the repo with dags code to pull (https://github.com/<org-name>/<repo-name>.git)
 #   - repoName - Name of the repo (<repo-name>.git)
 #   - branch - Branch with code to use
+#   - hostPath - Path on the host where to save data (must match the extraMounts.containerPath parameter in kind-config.yaml)
 #   - storageAccountName - Name of the Azure Storage Account where to save dags code
 #   - fileShareName - Name of the File Share within the Azure Storage Account where to save dags code
-#   - secretName - Name of the secret for accessing Storage Account with File Share. It must contains keys:
+#   - secretName - Name of the secret for accessing Storage Account with File Share. It must contain keys:
 #       - azurestorageaccountname - Storage Account name
 #       - azurestorageaccountkey - Access key
 repoURL: https://github.com/bulka4/data_and_ml_platform_kind.git
 repoName: data_and_ml_platform_kind.git
 branch: main
-storageAccountName: systemfilesbulka
-fileShareName: airflow-dags
+# storageAccountName: systemfilesbulka
+# fileShareName: git-sync
+hostPath: /git_code
 secretName: azure-storage-account

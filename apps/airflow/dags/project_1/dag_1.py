@@ -1,14 +1,30 @@
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
-from kubernetes.client import V1Volume, V1VolumeMount, V1PersistentVolumeClaimVolumeSource, V1EnvVar, V1EnvVarSource, V1SecretKeySelector
+from kubernetes.client import (
+    V1Volume, V1VolumeMount, V1EmptyDirVolumeSource, V1ResourceRequirements, V1Container
+)
+# from kubernetes.client import models as k8s
 
 from airflow import DAG
 from datetime import datetime
 
 
 # =============== Configuration ===============
-image = "airflow-dag:latest" # Include only lowercase letters
-script_to_run = "/opt/airflow/dags/project_1/task_1.py"
-pvc_name = "airflow-dags-pvc" # Name of the PVC with saved DAGs code (pulled by git-sync)
+image = "dbt:latest" # Include only lowercase letters
+# URL of a git repo with code to run
+repo_url = "https://github.com/bulka4/data_and_ml_platform_kind.git"
+# Path to the dbt project. That project needs to have the following file structure:
+#   |-- .dbt
+#       |-- profiles.yml
+#   |-- workspace
+#       |-- macros
+#       |-- models
+#       |-- dbt_project.yml
+dbt_project_path = "apps/dbt"
+# Commit from which to take the code (leave an empty string to take the latest one)
+commit = ""
+
+# script_to_run = "/opt/airflow/dags/project_1/task_1.py"
+# pvc_name = "airflow-dags-pvc" # Name of the PVC with saved DAGs code (pulled by git-sync)
 # airflow_logs_url = "wasb://airflow-logs@systemfilesbulka.blob.core.windows.net" # URL of the Storage Account used for saving Airflow logs
 # conn_id = "azure_blob" # ID of the Airflow connection used for accessing Azure Storage Account for saving Airflow logs
 
@@ -26,49 +42,55 @@ with DAG(
     ,schedule_interval=None
 ) as dag:
 
-    # Mount the PVC used by git-sync
-    dags_volume = V1Volume(
-        name='dags-volume'
-        ,persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(
-            claim_name=pvc_name
-        )
-    )
-
-    dags_volume_mount = V1VolumeMount(
-        name='dags-volume'
-        ,mount_path='/opt/airflow/dags'
-        #,sub_path='dags'
-        ,read_only=True
-    )
-
     task = KubernetesPodOperator(
-        task_id="run_task"
-        ,name="run-task"
-        ,namespace="airflow"
-        ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
+        task_id="dbt_task"
+        ,name="dbt"
+        ,namespace="spark"
+        # ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
+        # ,image_pull_secrets="" # Name of the secret for pulling images from a registry
         ,image=image
         ,image_pull_policy="IfNotPresent"   # don't pull an image from a remote registry but use a local one instead (for testing on kind)
-        ,volumes=[dags_volume]
-        ,volume_mounts=[dags_volume_mount]
-        ,cmds=["python", script_to_run]
-        # ,env_vars={
-        #     "AIRFLOW__LOGGING__REMOTE_LOGGING": "True"
-        #     ,"AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER": airflow_logs_url
-        #     ,"AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID": conn_id
-        #     # Use a secret with a connection string to the metadata db. Created pod might be running Airflow CLI commands
-        #     # which needs an access to that db.
-        #     # I am not sure if this is necessary.
-        #     ,V1EnvVar(
-        #         name="AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"
-        #         ,value_from=V1EnvVarSource(
-        #             secret_key_ref=V1SecretKeySelector(
-        #                 name="airflow-postgres-connection"
-        #                 ,key="connection"
-        #             )
-        #         )
-        #     )
-        # }
-        # ,in_cluster=True
+        # ,volumes=[dags_volume]
+        # ,volume_mounts=[dags_volume_mount]
+        ,cmds=["dbt", "run"]
+        ,resources=V1ResourceRequirements(
+            requests={"memory": "512Mi", "cpu": "500m"},
+            limits={"memory": "1Gi", "cpu": "1"},
+        )
+        ,volumes=[
+            V1Volume(
+                name="git-repo",
+                empty_dir=V1EmptyDirVolumeSource()
+            )
+        ]
+        ,volume_mounts=[
+            V1VolumeMount(
+                name="git-repo",
+                mount_path="/root",
+                sub_path=dbt_project_path  # replace with the git path
+            )
+        ]
+        ,init_containers=[
+            V1Container(
+                name="git-init",
+                image="alpine/git:latest",
+                command=["sh", "-c"],
+                args=[
+                    f"""
+                    git clone --branch main {repo_url} /repo
+                    cd /repo
+                    git checkout {commit} || true
+                    """
+                ],
+                volume_mounts=[
+                    V1VolumeMount(
+                        name="git-repo",
+                        mount_path="/repo"
+                    )
+                ]
+            )
+        ]
+        ,restart_policy="Never"
         ,get_logs=True
         ,is_delete_operator_pod=False # don't delete the pod once the task is finished
     )

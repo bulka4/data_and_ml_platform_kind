@@ -17,7 +17,8 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
+# directories to be removed by `dbt clean`
+clean-targets:
   - "target"
   - "dbt_packages"
 
@@ -25,6 +26,9 @@ models:
   data_warehouse:
     # Set up configs for models from the models/dwh_fact folder.
     dwh_fact:
-      # +database: iceberg_catalog  # Name of the catalog to use. It looks like it doesn't work.
-      +schema: fact               # schema where models will be saved.
-      +materialized: table        # How to save models. It can be 'table' or a 'view'.
+      # Tables will be saved in the schema called {project_schema}_{profiles_schema}, where:
+      #   - project_schema - schema name specified in dbt_project.yml file
+      #   - profiles_schema - schema name specified in profiles.yml file
+      +schema: fact
+      # How to save models. It can be 'table' or a 'view'.
+      +materialized: table

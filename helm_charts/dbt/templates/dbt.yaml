@@ -30,13 +30,6 @@ spec:
       image: dbt:latest
       imagePullPolicy: IfNotPresent
       command: ["/bin/bash", "-c", "sleep 3600"]
-      # env:
-        # - name: SPARK_HOST
-        #   value: "spark-thrift-server"
-        # - name: SPARK_PORT
-        #   value: "10000"
-        # - name: SPARK_SCHEMA
-        #   value: "default"
       resources:
         requests:
           memory: "512Mi"

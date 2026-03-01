@@ -3,25 +3,18 @@ namespace: spark
 
 image:
   # URL of the Spark Docker image from a container registry (with a tag)
-  url: spark-thrift-server:latest
+  url: spark:latest
   pullPolicy: IfNotPresent
 serviceAccountName: spark-thrift-sa # Name of the service account we will create
 serviceName: spark-thrift-server    # Name of the service we will create
 # Name of the Storage Account and container for storing data warehouse data used by Spark
 storageAccount:
-    # Name of the Kubernetes secret with the following keys:
-    #   - storage-account - Name of the Storage Account to use
-    #   - sa-access-key - Access key to the Storage Account
+  # Name of the Kubernetes secret with the following keys:
+  #   - storage-account - Name of the Storage Account to use
+  #   - sa-access-key - Access key to the Storage Account
   secret: adls-sp-secret
   name: dwhbulka
   container: dwh
-# Folder where to keep data warehouse data use by Spark.
-# This must match what is set up in Hive's deployment, hive-site.xml, the hive.metastore.warehouse.dir config
-# warehouseDir: abfss://dwh@dwhbulka.dfs.core.windows.net/iceberg-warehouse/
-
-# URL of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name of the server running Hive Metastore
-# If we have many metastores, we can provide multiple URLs: url_1,url2,...
-# hiveMetastoreUris: thrift://hive-metastore:9083
 
 # Name of the folder in Azure Storage Account where to create an Iceberg catalog
 iceberg:

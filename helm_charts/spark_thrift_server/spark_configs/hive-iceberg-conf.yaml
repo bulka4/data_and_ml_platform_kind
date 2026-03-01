@@ -1,4 +1,4 @@
-# Configuration files determining how Spark works, for example which Hive Metastore to use, where the data is stored.
+# Configuration files determining how Spark works together with Hive Metastore and Iceberg, for example which Hive Metastore to use, where the data is stored.
 
 # In pods running the Thrift Server and Hive Metastore, in the `/opt/spark/conf` folder we need to have configuration files:
 # - hive-site.xml

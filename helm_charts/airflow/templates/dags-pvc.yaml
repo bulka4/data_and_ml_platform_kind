@@ -1,19 +1,31 @@
-# This is a PVC used to store code pulled from a repo by git-sync. It uses Azure File Share as data storage. We need an RWX access mode for PV
-# so it can be mounted into many pods on different nodes.
+# This is a PVC used to access DAGs code pulled from a repo by git-sync (which is deployed by the separate 'git_sync' Helm chart). It uses Azure File Share
+# as data storage which provides a ReadWriteMany access mode so it can be mounted into many pods on different nodes.
 
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: azurefile-pv
+  name: airflow-dags-pv
   namespace: airflow
 spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /airflow_dags
+    path: /git_code
+  # csi:
+  #   driver: file.csi.azure.com  # Driver for Azure File Share
+  #   volumeHandle: "{{ .Values.storageAccountName }}#{{ .Values.fileShareName }}""
+  #   volumeAttributes:
+  #     shareName: {{ .Values.fileShareName }}
+  #     storageAccount: {{ .Values.storageAccountName }}
+  #   # Secret with the following keys:
+  #   #   - azurestorageaccountname - Storage Account name
+  #   #   - azurestorageaccountkey - Access key
+  #   nodeStageSecretRef:
+  #     name: {{ .Values.secretName }}
+  #     namespace: {{ .Values.namespace }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -22,9 +34,9 @@ metadata:
   namespace: airflow
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   storageClassName: ""
   resources:
     requests:
       storage: 1Gi
-  volumeName: azurefile-pv
+  volumeName: airflow-dags-pv

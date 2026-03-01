@@ -4,11 +4,11 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     # Remove taints so we can schedule pods on the control-plane as well
-    kubeadmConfigPatches:
-      - |
-        kind: InitConfiguration
-        nodeRegistration:
-          taints: []
+    # kubeadmConfigPatches:
+    #   - |
+    #     kind: InitConfiguration
+    #     nodeRegistration:
+    #       taints: []
     extraPortMappings:
       # port on which cluster is listening. Using this port we communicate with the cluster using kubectl
       # so it needs to be used in the kubeconfig file. We use that port when modifying the kubeconfig file
@@ -27,21 +27,26 @@ nodes:
         hostPort: 5000
         protocol: TCP
     # Mount host folders into the node container so it can be mounted into pods
-    extraMounts:
-      # Airflow DAGs
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/apps/airflow/dags"
-        containerPath: /airflow_dags  # This path can be used in a PV as a hostPath
+    # extraMounts:
+    #   # Airflow DAGs
+    #   - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/apps/airflow/dags"
+    #     containerPath: /airflow_dags  # This path can be used in a PV as a hostPath
       # Hive data warehouse
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/hive_dwh"
-        containerPath: /hive_dwh
+      # - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/hive_dwh"
+      #   containerPath: /hive_dwh
   - role: worker
     # Mount host folders into the node container so it can be mounted into pods
     extraMounts:
-      # Airflow DAGs
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/apps/airflow/dags"
-        containerPath: /airflow_dags  # This path can be used in a PV as a hostPath
+      # Mounting used in a PV with code pulled by git-sync
+      # hostPath is a path on the local host where to save data
+      - hostPath: C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/git_code
+        # containerPath is a path can be used in a PV as a hostPath
+        containerPath: /git_code
+      # # Airflow DAGs
+      # - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/apps/airflow/dags"
+      #   containerPath: /airflow_dags  # This path can be used in a PV as a hostPath
       # Hive data warehouse
-      - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/hive_dwh"
-        containerPath: /hive_dwh
+      # - hostPath: "C:/Users/mbulka/Documents/projects/my_projects/learning/data_and_ml_platform/data_and_ml_platform_kind/hive_dwh"
+      #   containerPath: /hive_dwh
 networking:
   disableDefaultCNI: false

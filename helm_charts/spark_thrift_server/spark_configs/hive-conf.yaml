@@ -1,4 +1,4 @@
-# Configuration files determining how Spark works, for example which Hive Metastore to use, where the data is stored.
+# Configuration files determining how Spark works together with Hive Metastore, for example which Hive Metastore to use, where the data is stored.
 
 # In pods running the Thrift Server and Hive Metastore, in the `/opt/spark/conf` folder we need to have configuration files:
 # - hive-site.xml
@@ -23,7 +23,7 @@ data:
     <configuration>
 
       <!-- URL of the Hive Metastore. It is of the format: thrift://<hive-metastore-DNS>:9083, where <hive-metastore-DNS> is a DNS name -->
-      <!-- of the server running Hive Metastore -->
+      <!-- of the server running Hive Metastore. If we have many metastores, we can provide multiple URLs: url_1,url2,... -->
       <property>
         <name>hive.metastore.uris</name>
         <value>{{ .Values.hiveMetastoreUris }}</value>
@@ -64,7 +64,7 @@ data:
     spark.hadoop.fs.defaultFS=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/
 
     # This must match the hive.metastore.warehouse.dir config in Hive Metastore server, hive-site.xml file
-    # Specify where the warehouse data will be stored
+    # Specify where the warehouse data will be stored. It is a URL of the format: abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/{folder_path}/
     spark.sql.warehouse.dir={{ .Values.warehouseDir }}
 
     # Configs for authentication to Azure Storage Account (to be able to read and save data). STORAGE_ACCOUNT is a name of the Storage Account

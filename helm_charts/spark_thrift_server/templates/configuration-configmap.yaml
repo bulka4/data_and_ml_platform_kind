@@ -3,8 +3,8 @@
 
 # This config file needs to be saved in the /opt/spark/conf folder, in the Thrift Server pod by mounting this ConfigMap.
 
-# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` using envsubst. We will set up those env vars
-# in pods where that ConfigMap will be mounted:
+# Every value `${VAR_NAME}` will be replaced with the value of the environment variable `VAR_NAME` using envsubst in the init container
+# in the deployment. We will set up those env vars in pods where that ConfigMap will be mounted:
 # - STORAGE_ACCOUNT - Name of the Storage Account where data warehouse data will be stored
 # - SA_ACCESS_KEY - Access key to the Storage Account where data warehouse data will be stored
 # - CONTAINER - Name of the container in Storage Account where data warehouse data will be stored
@@ -21,12 +21,6 @@ data:
     # Configs for authentication to Azure Storage Account (to be able to read and save data). STORAGE_ACCOUNT is a name of the Storage Account
     # to use and SA_ACCESS_KEY is an access key to it.
     spark.hadoop.fs.azure.account.key.${STORAGE_ACCOUNT}.dfs.core.windows.net=${SA_ACCESS_KEY}
-
-    # Download Iceberg runtime jar. Version must match:
-    #   - Spark version 3.5
-    #   - Scala version 2.12
-    #   - Iceberg version 1.9.2 (must be compatible with the Spark version)
-    # spark.jars.packages=org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.2
     
     # Add additional iceberg extensions providing additional functionalities (e.g. merge, time travel)
     spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
@@ -37,4 +31,5 @@ data:
     spark.sql.catalog.iceberg_catalog.warehouse=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/{{ .Values.iceberg.catalogFolder }}/
 
     # Set up the iceberg_catalog as a default catalog. When we create a table without specifying a catalog, this catalog will be used.
+    # It is needed for dbt since it creates tables without specifying catalog and it looks like we can't specify the catalog there.
     spark.sql.defaultCatalog=iceberg_catalog

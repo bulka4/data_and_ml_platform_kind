@@ -3,11 +3,14 @@ my_spark_project:
   outputs:
     dev:
       type: spark
-      method: thrift            # Use the Thrift protocol for connecting to the Spark Thrift Server
-      # method: session
+      # Use the Thrift protocol for connecting to the remote Spark Thrift Server
+      method: thrift
       host: spark-thrift-server
       port: 10000
       user: ""
-      schema: dwh           # Iceberg schema where to save created tables
+      # Tables will be saved in the schema called {project_schema}_{profiles_schema}, where:
+      #   - project_schema - schema name specified in dbt_project.yml file
+      #   - profiles_schema - schema name specified in profiles.yml file
+      schema: dwh
       connect_timeout: 30
       retries: 3
