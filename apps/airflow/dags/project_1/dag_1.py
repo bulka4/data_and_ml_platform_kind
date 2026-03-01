@@ -1,6 +1,6 @@
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from kubernetes.client import (
-    V1Volume, V1VolumeMount, V1EmptyDirVolumeSource, V1ResourceRequirements, V1Container
+    V1Volume, V1VolumeMount, V1EmptyDirVolumeSource, V1ResourceRequirements, V1Container, V1PodSpec
 )
 # from kubernetes.client import models as k8s
 
@@ -90,7 +90,7 @@ with DAG(
                 ]
             )
         ]
-        ,restart_policy="Never"
+        ,pod_spec=V1PodSpec(restart_policy="Never")
         ,get_logs=True
         ,is_delete_operator_pod=False # don't delete the pod once the task is finished
     )
