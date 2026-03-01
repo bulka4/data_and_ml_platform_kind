@@ -46,58 +46,60 @@ with DAG(
         task_id="dbt_task"
         ,name="dbt"
         ,namespace="spark"
-        ,containers=[
-            V1Container(
-                name="dbt"
-                ,image=image
-                ,image_pull_policy="IfNotPresent"   # don't pull an image from a remote registry but use a local one instead (for testing on kind)
-                # ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
-                # ,image_pull_secrets="" # Name of the secret for pulling images from a registry
-                ,command=["dbt", "run"]
-                ,resources=V1ResourceRequirements(
-                    requests={"memory": "512Mi", "cpu": "500m"},
-                    limits={"memory": "1Gi", "cpu": "1"},
+        ,pod_spec=V1PodSpec(
+            containers=[
+                V1Container(
+                    name="dbt"
+                    ,image=image
+                    ,image_pull_policy="IfNotPresent"   # don't pull an image from a remote registry but use a local one instead (for testing on kind)
+                    # ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
+                    # ,image_pull_secrets="" # Name of the secret for pulling images from a registry
+                    ,command=["dbt", "run"]
+                    ,resources=V1ResourceRequirements(
+                        requests={"memory": "512Mi", "cpu": "500m"},
+                        limits={"memory": "1Gi", "cpu": "1"},
+                    )
+                    ,volume_mounts=[
+                        V1VolumeMount(
+                            name="git-repo",
+                            mount_path="/root",
+                            sub_path=dbt_project_path  # replace with the git path
+                        )
+                    ]
                 )
-                ,volume_mounts=[
-                    V1VolumeMount(
-                        name="git-repo",
-                        mount_path="/root",
-                        sub_path=dbt_project_path  # replace with the git path
-                    )
-                ]
-            )
-        ]
-        # ,volumes=[dags_volume]
-        # ,volume_mounts=[dags_volume_mount]
-        ,volumes=[
-            V1Volume(
-                name="git-repo",
-                empty_dir=V1EmptyDirVolumeSource()
-            )
-        ]
-        ,init_containers=[
-            V1Container(
-                name="git-init",
-                image="alpine/git:latest",
-                command=["sh", "-c"],
-                args=[
-                    f"""
-                    git clone --branch main {repo_url} /repo
-                    cd /repo
-                    git checkout {commit} || true
-                    """
-                ],
-                volume_mounts=[
-                    V1VolumeMount(
-                        name="git-repo",
-                        mount_path="/repo"
-                    )
-                ]
-            )
-        ]
-        ,pod_spec=V1PodSpec(restart_policy="Never")
+            ]
+            ,init_containers=[
+                V1Container(
+                    name="git-init",
+                    image="alpine/git:latest",
+                    command=["sh", "-c"],
+                    args=[
+                        f"""
+                        git clone --branch main {repo_url} /repo
+                        cd /repo
+                        git checkout {commit} || true
+                        """
+                    ],
+                    volume_mounts=[
+                        V1VolumeMount(
+                            name="git-repo",
+                            mount_path="/repo"
+                        )
+                    ]
+                )
+            ]
+            # ,volumes=[dags_volume]
+            # ,volume_mounts=[dags_volume_mount]
+            ,volumes=[
+                V1Volume(
+                    name="git-repo",
+                    empty_dir=V1EmptyDirVolumeSource()
+                )
+            ]
+            ,restart_policy="Never"
+        )
         ,get_logs=True
         ,is_delete_operator_pod=False # don't delete the pod once the task is finished
-        ,full_pod_spec=True # this allows us to provide the `containers` argument in the KubernetesPodOperator function
+        ,full_pod_spec=True # this allows us to use pod_spec=V1PodSpec() argument where we can provide the `containers` argument in the KubernetesPodOperator function
     )
 
