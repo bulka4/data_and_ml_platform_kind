@@ -1,0 +1,44 @@
+# Pod running dbt which connects to the Spark Thrift Server
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dbt
+  namespace: spark
+  labels:
+    app: dbt
+spec:
+  initContainers:
+    # Clone code from git repo
+    - name: git-init
+      image: alpine/git:latest
+      command:
+        - sh
+        - -c
+        - |
+          git clone --branch main https://github.com/bulka4/data_and_ml_platform_kind.git /repo
+      volumeMounts:
+        - name: git-repo
+          mountPath: /repo
+
+  containers:
+    - name: dbt
+      image: dbt:latest
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/bash", "-c", "sleep 3600"]
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: "1"
+      volumeMounts:
+        - name: git-repo
+          mountPath: /root
+          subPath: apps/dbt
+          
+  volumes:
+    - name: git-repo
+      emptyDir: {}
+  restartPolicy: Never
