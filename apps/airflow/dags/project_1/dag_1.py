@@ -98,5 +98,6 @@ with DAG(
         ,pod_spec=V1PodSpec(restart_policy="Never")
         ,get_logs=True
         ,is_delete_operator_pod=False # don't delete the pod once the task is finished
+        ,full_pod_spec=True # this allows us to provide the `containers` argument in the KubernetesPodOperator function
     )
 
