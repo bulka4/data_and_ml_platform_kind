@@ -46,28 +46,33 @@ with DAG(
         task_id="dbt_task"
         ,name="dbt"
         ,namespace="spark"
-        # ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
-        # ,image_pull_secrets="" # Name of the secret for pulling images from a registry
-        ,image=image
-        ,image_pull_policy="IfNotPresent"   # don't pull an image from a remote registry but use a local one instead (for testing on kind)
+        ,containers=[
+            V1Container(
+                name="dbt"
+                ,image=image
+                ,image_pull_policy="IfNotPresent"   # don't pull an image from a remote registry but use a local one instead (for testing on kind)
+                # ,service_account_name="airflow-sa" # K8s Service Account with a secret for pulling images
+                # ,image_pull_secrets="" # Name of the secret for pulling images from a registry
+                ,command=["dbt", "run"]
+                ,resources=V1ResourceRequirements(
+                    requests={"memory": "512Mi", "cpu": "500m"},
+                    limits={"memory": "1Gi", "cpu": "1"},
+                )
+                ,volume_mounts=[
+                    V1VolumeMount(
+                        name="git-repo",
+                        mount_path="/root",
+                        sub_path=dbt_project_path  # replace with the git path
+                    )
+                ]
+            )
+        ]
         # ,volumes=[dags_volume]
         # ,volume_mounts=[dags_volume_mount]
-        ,cmds=["dbt", "run"]
-        ,resources=V1ResourceRequirements(
-            requests={"memory": "512Mi", "cpu": "500m"},
-            limits={"memory": "1Gi", "cpu": "1"},
-        )
         ,volumes=[
             V1Volume(
                 name="git-repo",
                 empty_dir=V1EmptyDirVolumeSource()
-            )
-        ]
-        ,volume_mounts=[
-            V1VolumeMount(
-                name="git-repo",
-                mount_path="/root",
-                sub_path=dbt_project_path  # replace with the git path
             )
         ]
         ,init_containers=[
