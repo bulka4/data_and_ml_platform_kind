@@ -25,7 +25,7 @@ spec:
     - name: dbt
       image: dbt:latest
       imagePullPolicy: IfNotPresent
-      command: ["/bin/bash", "-c", "sleep 3600"]
+      command: ["dbt", "run"]
       resources:
         requests:
           memory: "512Mi"
