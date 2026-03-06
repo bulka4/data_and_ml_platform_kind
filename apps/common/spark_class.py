@@ -14,9 +14,9 @@ class Spark:
     ):
         # Connect to Spark Thrift Server
         self.conn = hive.Connection(
-            host=self.host,
-            port=self.port,
-            auth=self.auth              
+            host=host
+            ,port=port
+            ,auth=auth              
         )
 
     
