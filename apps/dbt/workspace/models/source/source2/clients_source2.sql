@@ -1,5 +1,5 @@
 -- Set table name to "clients"
-{{ config(alias='products') }}
+{{ config(alias='clients') }}
 
 select
     1 as clientID
