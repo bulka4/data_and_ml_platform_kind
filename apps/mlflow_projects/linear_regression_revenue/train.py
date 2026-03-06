@@ -35,12 +35,11 @@ LIMIT 10
 
 spark = Spark(
     host='spark-thrift-server.spark.svc.cluster.local',   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
-    port=10000,
-    # auth='NOSASL'   # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
-    auth='NONE'
+    port=10000, 
+    auth='NONE' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
 )
 
-df = spark.read_sql(query)
+df = spark.read_query(query)
 x = df[['clientID']]
 y = df['revenue']
 

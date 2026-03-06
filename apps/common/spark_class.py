@@ -10,7 +10,7 @@ class Spark:
         self
         ,host='spark-thrift-server'
         ,port=10000
-        ,auth='NOSAL' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
+        ,auth='NONE' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
     ):
         # Connect to Spark Thrift Server
         self.conn = hive.Connection(
