@@ -18,6 +18,7 @@ print("Started training")
 parser = argparse.ArgumentParser()
 parser.add_argument("--fit_intercept", type=bool, required=True, help="The fit_intercept parameter for the sklearn.linear_model.LinearRegression model.")
 parser.add_argument("--positive", type=bool, required=True, help="The positive parameter for the sklearn.linear_model.LinearRegression model.")
+parser.add_argument("--artifact_path", type=str, required=True, help="Artifact path / model name used to save the model. Can be used to load the model later using URI 'runs:/{run_id}/{artifact_path}'")
 args = parser.parse_args()
 
 # -----------------------------
@@ -62,5 +63,6 @@ model.fit(X_train, y_train)
 # -----------------------------
 # Save model in artifact store
 # -----------------------------
-mlflow.sklearn.log_model(model, artifact_path="LR_model")
+# 
+mlflow.sklearn.log_model(model, artifact_path=args.artifact_path)
 print("Finished training")

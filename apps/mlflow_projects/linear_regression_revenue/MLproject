@@ -9,6 +9,9 @@ entry_points:
       positive: 
         type: bool
         default: True
+      artifact_path:
+        type: string
+        default: LR_model
     command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive}"
 
   evaluate:
@@ -16,5 +19,8 @@ entry_points:
       # We will evaluate the model from the latest run from the experiment specified by the experiment_name parameter.
       experiment_name:
         type: string
-        default: lasso_test
+        default: linear_regression
+      artifact_path:
+        type: string
+        default: LR_model
     command: "python3 evaluate.py --experiment_name {experiment_name}"

@@ -9,3 +9,5 @@ from
 where
     year(date) = 2025
     and month(date) = 1
+group by
+    clientID

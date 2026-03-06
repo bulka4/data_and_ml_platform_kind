@@ -38,6 +38,12 @@ parser.add_argument(
     ,required=True
     ,help="We will evaluate the model from the latest run from the experiment specified by the experiment_name parameter."
 )
+parser.add_argument(
+    "--artifact_path"
+    ,type=str
+    ,required=True
+    ,help="Artifact path / model name used to load the model using URI 'runs:/{run_id}/{artifact_path}'"
+)
 args = parser.parse_args()
 
 
@@ -45,6 +51,7 @@ args = parser.parse_args()
 # Load test data (example)
 # -----------------------------
 np.random.seed(123)
+# Prepare X_test an y_text of shape (20, 1)
 X_test = np.random.rand(20, 1) * 10
 y_test = 3 * X_test.squeeze() + 5 + np.random.randn(20) * 2
 
@@ -53,7 +60,7 @@ y_test = 3 * X_test.squeeze() + 5 + np.random.randn(20) * 2
 # Load model from MLflow artifact store
 # -----------------------------
 run_id = get_latest_run_id(args.experiment_name)
-model_uri = f"runs:/{run_id}/lasso_model"
+model_uri = f"runs:/{run_id}/{args.artifact_path}"
 loaded_model = mlflow.sklearn.load_model(model_uri)
 print(f"Loaded model from {model_uri}")
 

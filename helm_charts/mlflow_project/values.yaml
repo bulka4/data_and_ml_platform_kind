@@ -15,7 +15,7 @@ imagePullPolicy: IfNotPresent
 # - "--env-manager local" - Indicates to use the local environment. We want to use it because in the Docker image which we
 #                           are using in the Job already contains prepared environment for running the MLflow project.
 # - --experiment-name - Indicates which experiment assign this run to.
-command: "mlflow run https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_projects/linear_regression_revenue -e train --env-manager local --experiment-name=linear_regression"
+command: "mlflow run https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_projects/linear_regression_revenue -e evaluate --env-manager local --experiment-name=linear_regression_eval"
 
 # MLflow server URI. It uses DNS name assigned by the Service linked to the Tracking Server deployment.
 mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
