@@ -8,7 +8,7 @@ from pyhive import hive
 class Spark:
     def __init__(
         self
-        ,host='spark-thrift-host'
+        ,host='spark-thrift-server'
         ,port=10000
         ,auth='NOSAL' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
     ):

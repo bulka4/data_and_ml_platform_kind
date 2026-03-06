@@ -36,7 +36,8 @@ LIMIT 10
 spark = Spark(
     host='spark-thrift-server.spark.svc.cluster.local',   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
     port=10000,
-    auth='NOSASL'   # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
+    # auth='NOSASL'   # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
+    auth='NONE'
 )
 
 df = spark.read_sql(query)
