@@ -1,3 +1,6 @@
+-- Set table name to "products"
+{{ config(alias='products') }}
+
 select
     1 as productID
     ,'product_1' as productName

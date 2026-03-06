@@ -1,3 +1,6 @@
+-- Set table name to "clients"
+{{ config(alias='products') }}
+
 select
     1 as clientID
     ,'client_1' as clientName
