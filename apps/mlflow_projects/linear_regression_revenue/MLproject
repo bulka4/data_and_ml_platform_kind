@@ -23,4 +23,4 @@ entry_points:
       artifact_path:
         type: string
         default: LR_model
-    command: "python3 evaluate.py --experiment_name {experiment_name}"
+    command: "python3 evaluate.py --experiment_name {experiment_name} --artifact_path {artifact_path}"

@@ -64,6 +64,7 @@ model_uri = f"runs:/{run_id}/{args.artifact_path}"
 loaded_model = mlflow.sklearn.load_model(model_uri)
 print(f"Loaded model from {model_uri}")
 
+
 # -----------------------------
 # Evaluate model
 # -----------------------------
