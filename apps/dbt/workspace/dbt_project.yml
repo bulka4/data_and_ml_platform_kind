@@ -32,3 +32,18 @@ models:
       +schema: fact
       # How to save models. It can be 'table' or a 'view'.
       +materialized: table
+    # Set up configs for models from the models/dwh_dim folder.
+    dwh_dim:
+      +schema: dim
+      +materialized: table
+    dwh_raw:
+      +schema: raw
+      +materialized: table
+    # Folders to create tables which simulates data imported from external sources
+    source:
+      source1:
+        +schema: source1
+        +materialized: table
+      source2:
+        +schema: source2
+        +materialized: table

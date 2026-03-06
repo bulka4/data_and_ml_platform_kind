@@ -16,16 +16,24 @@ spec:
         - sh
         - -c
         - |
-          git clone --branch main https://github.com/bulka4/data_and_ml_platform_kind.git /repo
+          git clone --branch {{ params.git.branch }} {{ params.git.url }} /repo
+          cd /repo
+          {% if params.git.commit %}
+          git checkout {{ params.git.commit }}
+          {% endif %}
       volumeMounts:
         - name: git-repo
           mountPath: /repo
 
   containers:
     - name: dbt
-      image: dbt:latest
+      image: "{{ params.image }}"
       imagePullPolicy: IfNotPresent
-      command: ["dbt", "run"]
+      command:
+        - sh
+        - -c
+        - |
+          {{ params.dbtCommand }}
       resources:
         requests:
           memory: "512Mi"
@@ -35,8 +43,9 @@ spec:
           cpu: "1"
       volumeMounts:
         - name: git-repo
+          # Mount to the folder of the user we use in the dbt image
           mountPath: /root
-          subPath: apps/dbt
+          subPath: "{{ params.git.dbtProjectPath }}"
           
   volumes:
     - name: git-repo

@@ -1,2 +1,0 @@
-namespace: spark
-hostPath: /hive_dwh

@@ -14,20 +14,17 @@ spec:
       # serviceAccountName: {{ .Values.serviceAccountName }}
       # imagePullSecrets:
       #   - name: {{ .Values.acrSecret }}
-      
-      volumes:
-      # Volume for code pulled by git
-      - name: repo
-        emptyDir: {}
 
       containers:
         - name: mlflow-job
           image: {{ .Values.image }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           # Command to run a MLflow project
-          command: ["sh", "-c"]
-          args: 
-            - {{ .Values.command }}
+          command:
+            - "sh"
+            - "-c"
+            - |
+              {{ .Values.command }}
           env:
           # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
           - name: MLFLOW_TRACKING_URI

@@ -25,10 +25,21 @@ data:
     # Add additional iceberg extensions providing additional functionalities (e.g. merge, time travel)
     spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
     
-    # Define Iceberg catalog (called "iceberg_catalog", this is a name we can choose here)
+
+
+    # Below spark.sql.catalog.iceberg_catalog configs define Iceberg catalog (called "iceberg_catalog", this is a name we can choose here)
+
+    # Define the class used to perform operations on tables from the "iceberg_catalog" catalog
     spark.sql.catalog.iceberg_catalog=org.apache.iceberg.spark.SparkCatalog
+
+    # Define to store metadata of tables from the "iceberg_catalog" catalog in the filesystem (defined by the next iceberg_catalog.warehouse config)
     spark.sql.catalog.iceberg_catalog.type=hadoop
+
+    # Define where to store data of tables from the "iceberg_catalog" catalog
     spark.sql.catalog.iceberg_catalog.warehouse=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/{{ .Values.iceberg.catalogFolder }}/
+
+
+
 
     # Set up the iceberg_catalog as a default catalog. When we create a table without specifying a catalog, this catalog will be used.
     # It is needed for dbt since it creates tables without specifying catalog and it looks like we can't specify the catalog there.

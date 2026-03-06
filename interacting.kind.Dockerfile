@@ -15,8 +15,6 @@ ARG HIVE_IMAGE_NAME=hive:latest
 ARG MLFLOW_TRACKING_SERVER_IMAGE_NAME=mlflow-tracking-server:latest
 ARG MLFLOW_PROJECT_IMAGE_NAME=mlflow-project:latest
 ARG DBT_IMAGE_NAME=dbt:latest
-ARG MLFLOW_PROJECT_IMAGE_NAME=mlflow-project
-ARG MLFLOW_TRACKING_SERVER_IMAGE_NAME=mlflow-tracking-server
 # This prevents prompting user for input for example when using apt-get.
 ENV DEBIAN_FRONTEND=noninteractive
 

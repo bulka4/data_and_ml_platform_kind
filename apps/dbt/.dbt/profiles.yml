@@ -5,6 +5,7 @@ my_spark_project:
       type: spark
       # Use the Thrift protocol for connecting to the remote Spark Thrift Server
       method: thrift
+      # DNS name of the Spark Thrift Server (name of the Kubernetes service used for it)
       host: spark-thrift-server
       port: 10000
       user: ""

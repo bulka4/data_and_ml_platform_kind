@@ -9,8 +9,6 @@ from datetime import datetime
 image = "airflow-dag:latest" # Include only lowercase letters
 script_to_run = "/opt/airflow/dags/project_1/task_1.py"
 pvc_name = "airflow-dags-pvc" # Name of the PVC with saved DAGs code (pulled by git-sync)
-# airflow_logs_url = "wasb://airflow-logs@systemfilesbulka.blob.core.windows.net" # URL of the Storage Account used for saving Airflow logs
-# conn_id = "azure_blob" # ID of the Airflow connection used for accessing Azure Storage Account for saving Airflow logs
 
 
 
@@ -21,7 +19,7 @@ default_args = {
 }
 
 with DAG(
-    "example_pod_with_git_sync"
+    "python_script"
     ,default_args=default_args
     ,schedule_interval=None
 ) as dag:
@@ -51,24 +49,6 @@ with DAG(
         ,volumes=[dags_volume]
         ,volume_mounts=[dags_volume_mount]
         ,cmds=["python", script_to_run]
-        # ,env_vars={
-        #     "AIRFLOW__LOGGING__REMOTE_LOGGING": "True"
-        #     ,"AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER": airflow_logs_url
-        #     ,"AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID": conn_id
-        #     # Use a secret with a connection string to the metadata db. Created pod might be running Airflow CLI commands
-        #     # which needs an access to that db.
-        #     # I am not sure if this is necessary.
-        #     ,V1EnvVar(
-        #         name="AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"
-        #         ,value_from=V1EnvVarSource(
-        #             secret_key_ref=V1SecretKeySelector(
-        #                 name="airflow-postgres-connection"
-        #                 ,key="connection"
-        #             )
-        #         )
-        #     )
-        # }
-        # ,in_cluster=True
         ,get_logs=True
         ,is_delete_operator_pod=False # don't delete the pod once the task is finished
     )

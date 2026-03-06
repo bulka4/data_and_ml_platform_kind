@@ -3,6 +3,7 @@
 # There are two roles for two namespaces (so Airflow can create pods in those namespaces):
 #   - airflow
 #   - spark
+#   - mlflow
 
 # Role for the 'airflow' namespace
 apiVersion: rbac.authorization.k8s.io/v1
@@ -67,6 +68,43 @@ kind: RoleBinding
 metadata:
   name: airflow-pod-manager-binding
   namespace: spark
+subjects:
+  - kind: ServiceAccount
+    name: airflow-sa
+    namespace: airflow
+roleRef:
+  kind: Role
+  name: airflow-pod-manager
+  apiGroup: rbac.authorization.k8s.io
+
+  
+# Role for the 'mlflow' namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: mlflow
+  name: airflow-pod-manager
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - pods/status
+      - events
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - delete
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: airflow-pod-manager-binding
+  namespace: mlflow
 subjects:
   - kind: ServiceAccount
     name: airflow-sa

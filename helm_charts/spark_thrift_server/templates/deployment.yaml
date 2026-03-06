@@ -29,6 +29,7 @@ spec:
               envsubst < /opt/spark/conf/template/spark-defaults.conf.template > /opt/spark/conf/spark-defaults.conf
 
               # Run the Python script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.
+              # That script is provided by the image.
               python3 $SPARK_HOME/work-dir/init_iceberg_schema.py
           volumeMounts:
             - name: spark-conf-template

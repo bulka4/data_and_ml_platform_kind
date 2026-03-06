@@ -1,0 +1,28 @@
+# Job for running a MLflow project.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mlflow-project
+  namespace: mlflow
+  labels:
+    app: mlflow
+spec:
+  # Service Account used for reading a secret for accessing an image from ACR.
+  # serviceAccountName: {{ .Values.serviceAccountName }}
+  # imagePullSecrets:
+  #   - name: {{ .Values.acrSecret }}
+
+  containers:
+    - name: mlflow-job
+      image: mlflow-project
+      imagePullPolicy: IfNotPresent
+      # Command to run a MLflow project
+      command: ["sh", "-c"]
+      args:
+        - mlflow run https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_project -e train --env-manager local --experiment-name=lasso_test
+      env:
+      # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+      - name: MLFLOW_TRACKING_URI
+        value: http://tracking-server.mlflow.svc:5000
+  restartPolicy: Never

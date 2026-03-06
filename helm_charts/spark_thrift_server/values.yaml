@@ -3,7 +3,7 @@ namespace: spark
 
 image:
   # URL of the Spark Docker image from a container registry (with a tag)
-  url: spark:latest
+  url: spark-thrift-server:latest
   pullPolicy: IfNotPresent
 serviceAccountName: spark-thrift-sa # Name of the service account we will create
 serviceName: spark-thrift-server    # Name of the service we will create

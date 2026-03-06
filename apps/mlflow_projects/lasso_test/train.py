@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--alpha", type=float, required=True, help="The alpha parameter for the sklearn.linear_model.Lasso model.")
 parser.add_argument("--max_iter", type=int, required=True, help="The max_iter parameter for the sklearn.linear_model.Lasso model.")
 args = parser.parse_args()
+
 # -----------------------------
 # Generate some sample data
 # -----------------------------
