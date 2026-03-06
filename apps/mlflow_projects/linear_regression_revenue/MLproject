@@ -3,13 +3,13 @@ name: mlflow-test
 entry_points:
   train:
     parameters:
-      alpha:
-        type: float
-        default: 0.1
-      max_iter: 
-        type: int
-        default: 10000
-    command: "python3 train.py --alpha {alpha} --max_iter {max_iter}"
+      fit_intercept:
+        type: bool
+        default: True
+      positive: 
+        type: bool
+        default: True
+    command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive}"
 
   evaluate:
     parameters:
