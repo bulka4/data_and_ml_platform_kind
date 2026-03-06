@@ -1,10 +1,13 @@
+-- Set table name to "products"
+{{ config(alias='products') }}
+
 with all_products as (
     select
         productID
         ,productName
         ,price
     from
-        dwh_source1.products
+        {{ ref('source1_products') }}
 
     union all
 
@@ -13,7 +16,7 @@ with all_products as (
         ,productName
         ,price
     from
-        dwh_source2.products
+        {{ ref('source2_products') }}
 )
 
 select distinct

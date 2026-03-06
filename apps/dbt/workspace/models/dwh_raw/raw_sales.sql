@@ -7,7 +7,7 @@ select
     ,date
     ,amount
 from
-    dwh_source1.sales
+    {{ ref('source1_sales') }}
 
 union all
 
@@ -17,4 +17,4 @@ select
     ,date
     ,amount
 from
-    dwh_source2.sales
+    {{ ref('source2_sales') }}

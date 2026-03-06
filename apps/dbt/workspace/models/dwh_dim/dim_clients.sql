@@ -1,10 +1,13 @@
+-- Set table name to "clients"
+{{ config(alias='clients') }}
+
 with all_clients as (
     select
         clientID
         ,clientName
         ,clientCountry
     from
-        dwh_source1.clients
+        {{ ref('source1_clients') }}
 
     union all
 
@@ -13,7 +16,7 @@ with all_clients as (
         ,clientName
         ,clientCountry
     from
-        dwh_source2.clients
+        {{ ref('source2_clients') }}
 )
 
 select distinct

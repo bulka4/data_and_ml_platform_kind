@@ -8,7 +8,8 @@ select
     ,amount
     ,p.price * amount as totalPrice
 from
-    dwh_raw.sales as s
+    
+    {{ ref('raw_sales') }} as s
 
-    left join dwh_dim.products as p
+    left join {{ ref('dim_products') }} as p
         on p.productID = s.productID
