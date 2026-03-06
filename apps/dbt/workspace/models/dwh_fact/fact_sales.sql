@@ -2,11 +2,11 @@
 {{ config(alias='sales') }}
 
 select
-    clientID
-    ,productID
-    ,date
-    ,amount
-    ,p.price * amount as totalPrice
+    s.clientID
+    ,s.productID
+    ,s.date
+    ,s.amount
+    ,p.price * s.amount as totalPrice
 from
     
     {{ ref('raw_sales') }} as s
