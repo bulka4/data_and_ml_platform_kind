@@ -1,2 +1,4 @@
 create_k8s_secrets.sh
 git_code
+.kube
+__pycache__

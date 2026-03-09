@@ -1,50 +1,21 @@
+"""
+This script evaluates the model from the latest run from the current experiment (in which this script runs).
+"""
+
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 import mlflow
-import mlflow.sklearn
 import argparse
 
-def get_latest_run_id(experiment_name: str) -> str:
-    """
-    Returns the run ID of the most recent run in the given experiment.
-    """
-    # Get experiment object by name
-    experiment = mlflow.get_experiment_by_name(experiment_name)
-    if experiment is None:
-        raise ValueError(f"Experiment '{experiment_name}' not found")
-    
-    # Search runs in descending order of start time
-    runs = mlflow.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        order_by=["start_time DESC"],
-        max_results=1
-    )
-    
-    if runs.empty:
-        raise ValueError(f"No runs found in experiment '{experiment_name}'")
-    
-    # Return the run ID of the latest run
-    return runs.loc[0, "run_id"]
+import sys, pathlib
+
+# Add mlflow_projects folder to the sys.path so we can import from mlflow_projects/common
+sys.path.append(str(pathlib.Path(__file__).parent.parent.resolve()))
+
+from common.my_mlflow import MyMLflow
 
 
-
-# -----------------------------
-# Parse arguments
-# -----------------------------
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--experiment_name"
-    ,type=str
-    ,required=True
-    ,help="We will evaluate the model from the latest run from the experiment specified by the experiment_name parameter."
-)
-parser.add_argument(
-    "--artifact_path"
-    ,type=str
-    ,required=True
-    ,help="Artifact path / model name used to load the model using URI 'runs:/{run_id}/{artifact_path}'"
-)
-args = parser.parse_args()
+my_mlflow = MyMLflow()
 
 
 # -----------------------------
@@ -55,29 +26,37 @@ np.random.seed(123)
 X_test = np.random.rand(20, 1) * 10
 y_test = 3 * X_test.squeeze() + 5 + np.random.randn(20) * 2
 
-
-# -----------------------------
-# Load model from MLflow artifact store
-# -----------------------------
-run_id = get_latest_run_id(args.experiment_name)
-model_uri = f"runs:/{run_id}/{args.artifact_path}"
-loaded_model = mlflow.sklearn.load_model(model_uri)
-print(f"Loaded model from {model_uri}")
-
-
-# -----------------------------
-# Evaluate model
-# -----------------------------
-y_pred = loaded_model.predict(X_test)
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print(f"MSE: {mse:.2f}, R^2: {r2:.2f}")
+# print(f"MSE: {mse:.2f}, R^2: {r2:.2f}")
 
 
 # -----------------------------
 # Log metrics to MLflow backend store
 # -----------------------------
-mlflow.log_metric("mse", mse)
-mlflow.log_metric("r2", r2)
+
+# set up the experiment
+# mlflow.set_experiment("linear_regression")
+
+# Start a run and assign metrics to it
+with mlflow.start_run() as run:
+    # Get current experiment name
+    exp_id = mlflow.active_run().info.experiment_id
+    experiment_name = mlflow.get_experiment(exp_id).name
+
+
+    # -----------------------------
+    # Load the latest model for given experiment from MLflow artifact store
+    # -----------------------------
+    model = my_mlflow.load_latest_model(experiment_name=experiment_name)
+
+
+    # -----------------------------
+    # Evaluate the model
+    # -----------------------------
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+
+
+    mlflow.log_metric("mse", mse)
+    mlflow.log_metric("r2", r2)
 print("Evaluation metrics logged to MLflow backend")

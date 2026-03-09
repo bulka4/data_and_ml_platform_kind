@@ -12,10 +12,29 @@ imagePullPolicy: IfNotPresent
 #       a path from the repo 
 # - <entrypoint-name> - Name of the entrypoint from the MLproject file to run
 # - <param1>, <value1> - Parameter with a value for the entrypoint (we can provide many parameters one by one)
-# - "--env-manager local" - Indicates to use the local environment. We want to use it because in the Docker image which we
-#                           are using in the Job already contains prepared environment for running the MLflow project.
+# - "--env-manager local" - Indicates to use the local environment. We want to use it because we run MLflow project
+#         in a pod which already has prepared environment.
 # - --experiment-name - Indicates which experiment assign this run to.
-command: "mlflow run https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_projects/linear_regression_revenue -e evaluate --env-manager local --experiment-name=linear_regression_eval"
+# - -P param_name=value - Assign value for an entrypoint's parameter from the MLflow project (defined in MLproject file)
+command: |
+  mlflow run \
+    https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_projects/linear_regression_revenue \
+    -e train \
+    --env-manager local \
+    --experiment-name=linear_regression_revenue \
+    -P fit_intercept=True \
+    -P positive=True \
+    -P model_name=LR_model
+
+# command: |
+#   mlflow run \
+#     https://github.com/bulka4/data_and_ml_platform_kind.git#apps/mlflow_projects/linear_regression_revenue \
+#     -e evaluate \
+#     --env-manager local \
+#     --experiment-name=linear_regression_revenue \
+#     -P experiment_name_to_eval=linear_regression_revenue
 
 # MLflow server URI. It uses DNS name assigned by the Service linked to the Tracking Server deployment.
 mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
+# DNS name of the Spark Thrift Server to connect to (to get data from it for training models).
+sparkThriftServerDNS: spark-thrift-server.spark.svc.cluster.local

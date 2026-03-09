@@ -1,0 +1,2 @@
+# Introduction
+This is a Helm chart which creates a pod for developing MLflow projects code. We can connect into that pod using for example VS Code Remote develoment and Kubernetes extensions to edit and run code in it.

@@ -3,8 +3,9 @@ from sklearn.model_selection import train_test_split
 import mlflow
 import argparse
 
-import sys, pathlib
+import os, sys, pathlib
 
+# Add apps folder to the sys.path so we can import from apps/common
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
 from common.spark_class import Spark
@@ -16,10 +17,33 @@ print("Started training")
 # Parse arguments
 # -----------------------------
 parser = argparse.ArgumentParser()
-parser.add_argument("--fit_intercept", type=bool, required=True, help="The fit_intercept parameter for the sklearn.linear_model.LinearRegression model.")
-parser.add_argument("--positive", type=bool, required=True, help="The positive parameter for the sklearn.linear_model.LinearRegression model.")
-parser.add_argument("--artifact_path", type=str, required=True, help="Artifact path / model name used to save the model. Can be used to load the model later using URI 'runs:/{run_id}/{artifact_path}'")
+parser.add_argument(
+    "--fit_intercept"
+    ,type=bool
+    ,default=True
+    ,help="The fit_intercept parameter for the sklearn.linear_model.LinearRegression model."
+)
+parser.add_argument(
+    "--positive"
+    ,type=bool
+    ,default=True
+    ,help="The positive parameter for the sklearn.linear_model.LinearRegression model."
+)
+parser.add_argument(
+    "--model_name"
+    ,type=str
+    ,required=True
+    ,help="Model name used to save the model."
+)
 args = parser.parse_args()
+
+
+# -----------------------------
+# Get environment variables values
+# -----------------------------
+# DNS name of the Spark Thrift Server to connect to (to get data from it for training models).
+spark_host = os.getenv('SPARK_THRIFT_SERVER_DNS')
+
 
 # -----------------------------
 # Get data for training
@@ -35,7 +59,7 @@ LIMIT 10
 """
 
 spark = Spark(
-    host='spark-thrift-server.spark.svc.cluster.local',   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
+    host=spark_host,   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
     port=10000, 
     auth='NONE' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
 )
@@ -63,6 +87,10 @@ model.fit(X_train, y_train)
 # -----------------------------
 # Save model in artifact store
 # -----------------------------
-# 
-mlflow.sklearn.log_model(model, artifact_path=args.artifact_path)
+    
+# mlflow.set_experiment("linear_regression")
+
+# Start a run and assign the model to it
+with mlflow.start_run() as run:
+    mlflow.sklearn.log_model(model, name=args.model_name)
 print("Finished training")

@@ -9,18 +9,9 @@ entry_points:
       positive: 
         type: bool
         default: True
-      artifact_path:
+      model_name:
         type: string
-        default: LR_model
-    command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive}"
+    command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive} --model_name {model_name}"
 
   evaluate:
-    parameters:
-      # We will evaluate the model from the latest run from the experiment specified by the experiment_name parameter.
-      experiment_name:
-        type: string
-        default: linear_regression
-      artifact_path:
-        type: string
-        default: LR_model
-    command: "python3 evaluate.py --experiment_name {experiment_name} --artifact_path {artifact_path}"
+    command: "python3 evaluate.py"

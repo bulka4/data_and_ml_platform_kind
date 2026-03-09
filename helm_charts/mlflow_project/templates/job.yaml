@@ -26,7 +26,11 @@ spec:
             - |
               {{ .Values.command }}
           env:
-          # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
-          - name: MLFLOW_TRACKING_URI
-            value: {{ .Values.mlflowTrackingUri }}
+            # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+            - name: MLFLOW_TRACKING_URI
+              value: {{ .Values.mlflowTrackingUri }}
+            # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
+            # from it for training models).
+            - name: SPARK_THRIFT_SERVER_DNS
+              value: {{ .Values.sparkThriftServerDNS }}
       restartPolicy: Never

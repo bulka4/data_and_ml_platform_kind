@@ -53,20 +53,28 @@ RUN apt-get update && \
 
 # ============ Update kubeconfig file (.kube/config) ============
 
+# Copy the kubeconfig file from the host
+COPY .kube /root/.kube
+
 # Update the kubeconfig file (.kube/config) to specify IP of the Kubernetes cluster to use:
 #   - host.docker.internal is the DNS name mapped to the IP of the host where this image will be running (created automatically by Docker)
 #   - 6443 is the port on which cluster is listening. We specified that port in the kind-config file
-RUN <<EOF cat > /root/modify_kubeconfig.sh
-kubectl config set-cluster kind-$CLUSTER_NAME \
+RUN kubectl config set-cluster kind-$CLUSTER_NAME \
     --server=https://host.docker.internal:6443 \
     --insecure-skip-tls-verify=true
-EOF
 
-RUN \
-    # Remove the '\r' sign from the script
-    sed -i 's/\r$//' /root/modify_kubeconfig.sh && \
-    # Make the script executable
-    chmod +x /root/modify_kubeconfig.sh
+
+# RUN <<EOF cat > /root/modify_kubeconfig.sh
+# kubectl config set-cluster kind-$CLUSTER_NAME \
+#     --server=https://host.docker.internal:6443 \
+#     --insecure-skip-tls-verify=true
+# EOF
+
+# RUN \
+#     # Remove the '\r' sign from the script
+#     sed -i 's/\r$//' /root/modify_kubeconfig.sh && \
+#     # Make the script executable
+#     chmod +x /root/modify_kubeconfig.sh
 
 
 

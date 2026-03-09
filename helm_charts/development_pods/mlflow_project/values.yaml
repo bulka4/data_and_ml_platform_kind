@@ -1,0 +1,13 @@
+# namespace where to create the pod
+namespace: mlflow
+# Docker image to use
+image: mlflow-project
+imagePullPolicy: IfNotPresent
+# Path at the host where to store PV's data (when using kind, this is the extraMounts.containerPath parameter from the kind-config.yaml file)
+hostPath: /git_code
+# Path in the pod where we will keep developed code (PV with code will be mounted there)
+mountPath: /root
+# URI of the MLflow tracking server to use
+mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
+# DNS name of the Spark Thrift Server to connect to (to get data from it for training models).
+sparkThriftServerDNS: spark-thrift-server.spark.svc.cluster.local
