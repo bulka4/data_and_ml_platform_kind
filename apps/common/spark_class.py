@@ -19,6 +19,17 @@ class Spark:
             ,auth=auth              
         )
 
+
+    def run_query(self, query):
+        """
+        Run the query without returning any results
+        """
+        # Create a cursor
+        cursor = self.conn.cursor()
+
+        # Execute your query
+        cursor.execute(query)
+
     
     def read_query(self, query):
         # Create a cursor

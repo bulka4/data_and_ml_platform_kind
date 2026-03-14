@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dev-pod
+  namespace: {{ .Values.namespace }}
+spec:
+    # In the init container, interpolate the Spark config template file (insert values of env vars). Prepared config files will be used
+    # to save data using Spark.
+    initContainers:
+      - name: prepare-configs
+        image: {{ .Values.image.url }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            # Interpolate template config files (insert values of env vars). Prepared config file move to the ephemeral volume
+            # 'conf' which is also used in the main container.
+            envsubst < /opt/spark/conf/template/spark-defaults.conf.template > /opt/spark/conf/spark-defaults.conf
+        volumeMounts:
+          - name: spark-conf-template
+            mountPath: /opt/spark/conf/template
+          - name: conf
+            mountPath: /opt/spark/conf
+        env:
+          - name: STORAGE_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.storageAccount.secret }}
+                key: storage-account
+          - name: SA_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.storageAccount.secret }}
+                key: sa-access-key
+          - name: CONTAINER
+            value: {{ .Values.storageAccount.container }}
+    containers:
+      - name: dev
+        image: {{ .Values.image.url }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        # Run the image as root, so we can edit files inside (they are mounted as owned by root)
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        command: ["sleep", "infinity"]
+        volumeMounts:
+          - name: code
+            mountPath: {{ .Values.mountPath }}
+          - name: conf
+            mountPath: /opt/spark/conf
+        env:
+          # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+          - name: MLFLOW_TRACKING_URI
+            value: {{ .Values.mlflowTrackingUri }}
+          # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
+          # from it for training models).
+          - name: SPARK_THRIFT_SERVER_DNS
+            value: {{ .Values.sparkThriftServerDNS }}
+    volumes:
+      # PV with code to develop
+      - name: code
+        persistentVolumeClaim:
+          claimName: code-pvc
+      # ConfigMap with Spark config template to be interpolated in the init container. It is the same config as the one used for the Spark Thrift Server.
+      #  Prepared config files will be used to save data using Spark.
+      - name: spark-conf-template
+        configMap:
+          name: spark-conf-template
+      - name: conf
+        emptyDir: {}

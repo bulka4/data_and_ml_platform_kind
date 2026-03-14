@@ -92,3 +92,11 @@ kubectl create secret generic postgres-backend-store \
   --from-literal=user-password=mlflow \
   --from-literal=admin-password=mlflow \
   -n mlflow
+
+# Service Principal's credentials which will be used by Spark to connect to the Storage Account (Spark will be used together with
+# MLflow sometimes so this secret needs to be in the mlflow namespace as well).
+# They will be used in the spark-defaults.conf and core-site.xml files
+kubectl create secret generic adls-sp-secret \
+  --from-literal=storage-account=dwhbulka \
+  --from-literal=sa-access-key=${access_key} \
+  -n mlflow

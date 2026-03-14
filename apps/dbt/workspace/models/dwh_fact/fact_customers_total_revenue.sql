@@ -1,5 +1,5 @@
--- Set table name to "customersTotalRevenue"
-{{ config(alias='customersTotalRevenue') }}
+-- Set table name to "customers_total_revenue"
+{{ config(alias='customers_total_revenue') }}
 
 select
     clientID

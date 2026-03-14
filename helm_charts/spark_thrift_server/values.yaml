@@ -3,16 +3,19 @@ namespace: spark
 
 image:
   # URL of the Spark Docker image from a container registry (with a tag)
-  url: spark-thrift-server:latest
+  #url: spark-thrift-server:latest
+  url: mlflow-spark:latest
   pullPolicy: IfNotPresent
 serviceAccountName: spark-thrift-sa # Name of the service account we will create
 serviceName: spark-thrift-server    # Name of the service we will create
-# Name of the Storage Account and container for storing data warehouse data used by Spark
+
+# Storage Account and container for storing data warehouse data used by Spark. Those params are used to prepare Spark config files.
 storageAccount:
   # Name of the Kubernetes secret with the following keys:
   #   - storage-account - Name of the Storage Account to use
   #   - sa-access-key - Access key to the Storage Account
   secret: adls-sp-secret
+  # Name of the Storage Account and container
   name: dwhbulka
   container: dwh
 

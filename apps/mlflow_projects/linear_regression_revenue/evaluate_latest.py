@@ -9,8 +9,8 @@ import argparse
 
 import sys, pathlib
 
-# Add mlflow_projects folder to the sys.path so we can import from mlflow_projects/common
-sys.path.append(str(pathlib.Path(__file__).parent.parent.resolve()))
+# Add "apps" folder to the sys.path so we can import from "apps/common"
+sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
 from common.my_mlflow import MyMLflow
 
@@ -26,15 +26,10 @@ np.random.seed(123)
 X_test = np.random.rand(20, 1) * 10
 y_test = 3 * X_test.squeeze() + 5 + np.random.randn(20) * 2
 
-# print(f"MSE: {mse:.2f}, R^2: {r2:.2f}")
-
 
 # -----------------------------
 # Log metrics to MLflow backend store
 # -----------------------------
-
-# set up the experiment
-# mlflow.set_experiment("linear_regression")
 
 # Start a run and assign metrics to it
 with mlflow.start_run() as run:
@@ -46,7 +41,8 @@ with mlflow.start_run() as run:
     # -----------------------------
     # Load the latest model for given experiment from MLflow artifact store
     # -----------------------------
-    model = my_mlflow.load_latest_model(experiment_name=experiment_name)
+    latest_model = my_mlflow.find_latest_model(experiment_name=experiment_name)
+    model = mlflow.sklearn.load_model(latest_model.model_uri)
 
 
     # -----------------------------
@@ -59,4 +55,6 @@ with mlflow.start_run() as run:
 
     mlflow.log_metric("mse", mse)
     mlflow.log_metric("r2", r2)
+    mlflow.set_tag("evaluated_model_uri", latest_model.model_uri)
+    mlflow.set_tag("evaluated_model_source_run_id", latest_model.source_run_id)
 print("Evaluation metrics logged to MLflow backend")

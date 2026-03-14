@@ -13,5 +13,8 @@ entry_points:
         type: string
     command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive} --model_name {model_name}"
 
-  evaluate:
-    command: "python3 evaluate.py"
+  eval_latest:
+    command: "python3 evaluate_latest.py"
+
+  eval_all:
+    command: "python3 evaluate_all.py"

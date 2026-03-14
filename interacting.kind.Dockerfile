@@ -14,6 +14,7 @@ ARG SPARK_IMAGE_NAME=spark-thrift-server:latest
 ARG HIVE_IMAGE_NAME=hive:latest
 ARG MLFLOW_TRACKING_SERVER_IMAGE_NAME=mlflow-tracking-server:latest
 ARG MLFLOW_PROJECT_IMAGE_NAME=mlflow-project:latest
+ARG MLFLOW_SPARK=mlflow-spark:latest
 ARG DBT_IMAGE_NAME=dbt:latest
 # This prevents prompting user for input for example when using apt-get.
 ENV DEBIAN_FRONTEND=noninteractive
@@ -105,6 +106,7 @@ docker build -t $HIVE_IMAGE_NAME -f dockerfiles/hive/hive.Dockerfile dockerfiles
 docker build -t $DBT_IMAGE_NAME -f dockerfiles/dbt.Dockerfile dockerfiles
 docker build -t $MLFLOW_PROJECT_IMAGE_NAME -f dockerfiles/mlflow_project/mlflow.project.Dockerfile dockerfiles/mlflow_project
 docker build -t $MLFLOW_TRACKING_SERVER_IMAGE_NAME -f dockerfiles/mlflow.tracking.server.Dockerfile dockerfiles
+docker build -t $MLFLOW_SPARK -f dockerfiles/mlflow_spark/mlflow.spark.Dockerfile dockerfiles/mlflow_spark
 
 kind load docker-image $AIRFLOW_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $AIRFLOW_DAG_IMAGE_NAME --name $CLUSTER_NAME
@@ -113,6 +115,7 @@ kind load docker-image $HIVE_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $DBT_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $MLFLOW_PROJECT_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $MLFLOW_TRACKING_SERVER_IMAGE_NAME --name $CLUSTER_NAME
+kind load docker-image $MLFLOW_SPARK --name $CLUSTER_NAME
 EOF
 
 RUN \

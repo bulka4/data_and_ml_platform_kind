@@ -1,4 +1,12 @@
-# Dockerfile for creating an image for running Spark Thrift Server
+# This is an image for working with MLflow, PyHive and Spark. It can be used for example to:
+#   - load data from an Iceberg catalog using PyHive,
+#   - load a model from a MLflow registry and make predictions with it
+#   - save predictions in an Iceberg table using Spark.
+
+# It is also used for code development, i.e. we can attach VS Code to the pod running this image.
+
+# Alternatively, instead of using this image, we could use another image where we use PyIceberg to load and save data in Iceberg. That image
+# would be much smaller than this one with Spark and doesn't require mounting Spark configuration files.
 
 # Additional notes:
 #   - Azure Storage Account will be used for storing data warehouse data used for Spark calculations
@@ -9,6 +17,8 @@ FROM apache/spark:3.5.0
 USER root
 
 ENV SPARK_HOME=/opt/spark
+# Use bash as the default shell
+ENV SHELL=/bin/bash
 
 # Add jars:
 #   - hadoop-azure, azure-storage, hadoop-azure-datalake - For connecting to Azure Storage Account (enables reading and saving data). 
@@ -28,14 +38,23 @@ RUN wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-azure/3.3.4/had
 # Install tools needed:
 #   - gettext - To use envsubst to interpolate template spark-defaults.conf config file (i.e. insert values of env vars) 
 #           It is used in the init container in Spark's pod.
-RUN apt-get update && \
-    apt-get install -y gettext && \
-    rm -rf /var/lib/apt/lists/*
+#   - git: Required to run a MLflow project
+#   - dash: For using 'sh' shell. Needed because when deploying a Job running MLflow project, we execute the command "sh -c "mlflow run ...""
+#   - bash, bash-completion - For using bash shell with folder name autocompletion (when pressing tab). Bash shell will be used when connecting to
+#           the container / pod running this image for debugging / code development (for example when attaching VS Code)
+RUN apt-get update && apt-get install -y \
+    gettext \
+    git \
+    dash \
+    bash bash-completion \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install tools needed to run the init_iceberg_schema.py script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.
-RUN pip install --no-cache-dir pyspark==3.5.0
-
-USER spark
+# Copy and install Python libraries we will use in Python scripts
+COPY requirements.txt $SPARK_HOME/work-dir/requirements.txt
 
 # Copy the init_iceberg_schema.py script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.
 COPY init_iceberg_schema.py $SPARK_HOME/work-dir/
+
+RUN pip install --no-cache-dir -r $SPARK_HOME/work-dir/requirements.txt
+
+USER spark

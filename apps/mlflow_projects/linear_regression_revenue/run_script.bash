@@ -1,3 +1,5 @@
+# Bash commands for running MLflow projects
+
 mlflow run . \
     -e train \
     --env-manager local \
@@ -8,6 +10,12 @@ mlflow run . \
 
 
 mlflow run . \
-    -e evaluate \
+    -e eval_latest \
+    --env-manager local \
+    --experiment-name=linear_regression_revenue
+
+
+mlflow run . \
+    -e eval_all \
     --env-manager local \
     --experiment-name=linear_regression_revenue

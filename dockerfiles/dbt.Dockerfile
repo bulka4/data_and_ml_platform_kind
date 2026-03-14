@@ -6,9 +6,9 @@ FROM python:3.10-slim
 #   - dbt-spark[PyHive], pyhive, thrift, thrift-sasl - So we can use the 'thrift' method in the profiles.yml for connecting to the 
 #           Spark Thrift Server over Thrift protocol
 RUN pip install --no-cache-dir \
-    dbt-spark[PyHive] \
+    dbt-spark[PyHive]==1.10.1 \
     pyhive==0.7.0 \
-    thrift==0.22.0 \
+    thrift==0.16.0 \
     thrift-sasl==0.4.3
 
 # Install tools:

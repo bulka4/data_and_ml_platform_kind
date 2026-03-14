@@ -17,6 +17,7 @@ spec:
     spec:
       # Service Account with permissions for creating pods and pulling images from ACR
       serviceAccountName: {{ .Values.serviceAccountName }}
+      # In the init container, interpolate the Spark config template file (insert values of env vars)
       initContainers:
         - name: prepare-configs
           image: {{ .Values.image.url }}
@@ -25,7 +26,8 @@ spec:
             - sh
             - -c
             - |
-              # Interpolate template config files (insert values of env vars)
+              # Interpolate template config files (insert values of env vars). Prepared config file move to the ephemeral volume
+              # 'conf' which is also used in the main container.
               envsubst < /opt/spark/conf/template/spark-defaults.conf.template > /opt/spark/conf/spark-defaults.conf
 
               # Run the Python script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.
@@ -56,12 +58,14 @@ spec:
           # Below command starts the Thrift Server and Spark Driver. Driver will be creating executors in separate pods.
           # We use spark-submit instead of start-thriftserver.sh in order to run the Thrift Server in the foreground (there is no child process being created,
           # it runs as PID 1). Thanks to that pod doesn't change status into completed and we can see logs.
-          # spark.driver.bindAddress is an IP address to which Spark Driver will bind (it will listen on that IP). That should be 
-          #     pod's IP
-          # spark.driver.host specifies a DNS name of the Spark Driver which will be used by executor pods to talk to the Driver
-          #     It can be the name of the service which is used by the pod running the Thrift Server and Driver
-          # spark.driver.port and spark.blockManager.port might be needed (I am not sure) so driver can bind to a proper port (start listening on that port)
-          # serviceAccountName is the name of the service account with permissions for creating pods. It will be used by the Driver to create Executor pods.
+          # Parameters we use:
+          #   - master - Use Kubernetes as a resource manager (use Kubernetes API server as the master)
+          #   - spark.driver.bindAddress is an IP address to which Spark Driver will bind (it will listen on that IP). That should be 
+          #         pod's IP
+          #   - spark.driver.host specifies a DNS name of the Spark Driver which will be used by executor pods to talk to the Driver
+          #         It can be the name of the service which is used by the pod running the Thrift Server and Driver
+          #   - spark.driver.port and spark.blockManager.port might be needed (I am not sure) so driver can bind to a proper port (start listening on that port)
+          #   - serviceAccountName is the name of the service account with permissions for creating pods. It will be used by the Driver to create Executor pods.
           command:
             - /bin/bash
             - -c

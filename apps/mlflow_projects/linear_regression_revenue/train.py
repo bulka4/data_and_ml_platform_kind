@@ -1,3 +1,7 @@
+"""
+This is a script for training a linear regression model
+"""
+
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import mlflow
@@ -5,7 +9,7 @@ import argparse
 
 import os, sys, pathlib
 
-# Add apps folder to the sys.path so we can import from apps/common
+# Add "apps" folder to the sys.path so we can import from "apps/common"
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
 from common.spark_class import Spark
@@ -54,8 +58,7 @@ SELECT
     clientID
     ,revenue
 FROM
-    dwh_fact.customersTotalRevenue
-LIMIT 10
+    dwh_fact.customers_total_revenue
 """
 
 spark = Spark(
