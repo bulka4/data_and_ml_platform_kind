@@ -1,0 +1,170 @@
+# Run Spark script using Spark Application CRD. We need to have installed Spark Operator to run this.
+# We use here a volume with hostPath to provide the Spark script to run.
+
+# Spark configuration:
+# We create a different folder for Spark configuration '/opt/spark/custom_conf' because Spark Operator already mounts into '/opt/spark/conf', so
+# we can't mount another volume there.
+
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: pyspark-app
+  namespace: {{ .Values.namespace }}
+spec:
+  type: Python
+  mode: cluster
+  pythonVersion: "3"
+  imagePullPolicy: {{ .Values.imagePullPolicy }}
+  sparkVersion: "3.5.0"
+  restartPolicy:
+    type: Never
+
+  # Spark script to run. That is a path inside the Spark Driver Pod's container. We need to start this path with 'local:///'
+  # if we want to use a local file from the image. Otherwise we need to use the `spark.kubernetes.file.upload.path` Spark configuration
+  # to provide information about the location of the script to run.
+  mainApplicationFile: "local:///opt/spark/scripts/{{ .Values.mainApplicationFile }}"
+
+  # Docker image with Spark
+  image: {{ .Values.image }}
+  # Get a secret with value for authentication to the ACR.
+  # imagePullSecrets:
+  # - acr-auth
+  
+  volumes:
+    # Volume with Spark scripts. Use containerPath from kind-config.yaml as the hostPath.path.
+    - name: scripts
+      hostPath:
+        path: /apps   # path on the Kubernetes node with Spark scripts
+    # ConfigMap with Spark config template to be interpolated in the init container. It is the same config as the one used for the Spark Thrift Server.
+    # Prepared config files will be used to save data using Spark.
+    - name: spark-conf-template
+      configMap:
+        name: spark-conf-template
+    # Volume with interpolated, ready to use Spark configs.
+    - name: conf
+      emptyDir: {}
+
+  # Specify parameters for the Spark Driver Pod
+  driver:
+    cores: 1
+    memory: "512m"
+    serviceAccount: spark-operator # Use service account created also in this chart so the driver can create executor pods.
+    labels:
+      version: 3.3.1
+
+    # Mount a volume with Spark scripts
+    volumeMounts:
+      - name: scripts
+        mountPath: /opt/spark/scripts  # path inside the Spark Driver Pod's container with Spark scripts
+      - name: conf
+        mountPath: /opt/spark/custom_conf
+      # We need to mount it here so we can mount it to the init container
+      - name: spark-conf-template
+        mountPath: /opt/spark/custom_conf/template
+
+    # In the init container, interpolate the Spark config template file (insert values of env vars). Prepared config files will be used
+    # to save data using Spark.
+    initContainers:
+      - name: prepare-configs
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            # Interpolate template config files (insert values of env vars). Prepared config file move to the ephemeral volume
+            # 'conf' which is also used in the main container.
+            envsubst < /opt/spark/custom_conf/template/spark-defaults.conf.template > /opt/spark/custom_conf/spark-defaults.conf
+        volumeMounts:
+          - name: spark-conf-template
+            mountPath: /opt/spark/custom_conf/template
+          - name: conf
+            mountPath: /opt/spark/custom_conf
+        env:
+          - name: STORAGE_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.storageAccount.secret }}
+                key: storage-account
+          - name: SA_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.storageAccount.secret }}
+                key: sa-access-key
+          - name: CONTAINER
+            value: {{ .Values.storageAccount.container }}
+    
+    env:
+      # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+      - name: MLFLOW_TRACKING_URI
+        value: {{ .Values.mlflowTrackingUri }}
+      # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
+      # from it for training models).
+      - name: SPARK_THRIFT_SERVER_DNS
+        value: {{ .Values.sparkThriftServerDNS }}
+      # Use the our folder as Spark configuration
+      - name: SPARK_CONF_DIR
+        value: /opt/spark/custom_conf
+
+
+  # Specify parameters for the Spark Executors' Pods 
+  executor:
+    cores: 1
+    instances: 1
+    memory: "512m"
+    labels:
+      version: 3.3.1
+
+    # Mount a volume with Spark scripts
+    volumeMounts:
+      - name: scripts
+        mountPath: /opt/spark/scripts  # path inside the container where Spark scripts will be accessible
+      - name: conf
+        mountPath: /opt/spark/custom_conf
+      # We need to mount it here so we can mount it to the init container
+      - name: spark-conf-template
+        mountPath: /opt/spark/custom_conf/template
+
+    # In the init container, interpolate the Spark config template file (insert values of env vars). Prepared config files will be used
+    # to save data using Spark.
+    initContainers:
+      - name: prepare-configs
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            # Interpolate template config files (insert values of env vars). Prepared config file move to the ephemeral volume
+            # 'conf' which is also used in the main container.
+            envsubst < /opt/spark/custom_conf/template/spark-defaults.conf.template > /opt/spark/custom_conf/spark-defaults.conf
+        volumeMounts:
+          - name: spark-conf-template
+            mountPath: /opt/spark/custom_conf/template
+          - name: conf
+            mountPath: /opt/spark/custom_conf
+        env:
+          - name: STORAGE_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.storageAccount.secret }}
+                key: storage-account
+          - name: SA_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.storageAccount.secret }}
+                key: sa-access-key
+          - name: CONTAINER
+            value: {{ .Values.storageAccount.container }}
+    
+    env:
+      # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+      - name: MLFLOW_TRACKING_URI
+        value: {{ .Values.mlflowTrackingUri }}
+      # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
+      # from it for training models).
+      - name: SPARK_THRIFT_SERVER_DNS
+        value: {{ .Values.sparkThriftServerDNS }}
+      # Use the our folder as Spark configuration
+      - name: SPARK_CONF_DIR
+        value: /opt/spark/custom_conf

@@ -3,7 +3,13 @@ kind: Pod
 metadata:
   name: dev-pod
   namespace: {{ .Values.namespace }}
+  labels:
+    app: dev-pod
 spec:
+    # Service Account with permissions for creating pods. We run Spark in this pod in the client mode,
+    # so Spark driver will be created in this pod, so this pod needs this service account so driver can use it to create executor pods.
+    serviceAccountName: {{ .Values.serviceAccountName }}
+
     # In the init container, interpolate the Spark config template file (insert values of env vars). Prepared config files will be used
     # to save data using Spark.
     initContainers:
@@ -57,6 +63,11 @@ spec:
           # from it for training models).
           - name: SPARK_THRIFT_SERVER_DNS
             value: {{ .Values.sparkThriftServerDNS }}
+          # IP address of the pod (used for Spark configuration)
+          # - name: POD_IP
+          #   valueFrom:
+          #     fieldRef:
+          #       fieldPath: status.podIP
     volumes:
       # PV with code to develop
       - name: code

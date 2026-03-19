@@ -1,13 +1,9 @@
-# namespace where to create the pod
-namespace: mlflow
-# Docker image to use
-image:
-  url: mlflow-spark
-  pullPolicy: IfNotPresent
-# Path at the host where to store PV's data (when using kind, this is the extraMounts.containerPath parameter from the kind-config.yaml file)
-hostPath: /apps
-# Path in the pod where we will keep developed code (PV with code will be mounted there)
-mountPath: /root/apps
+namespace: spark
+imagePullPolicy: IfNotPresent
+# path of the Spark script to run. This is the path to the Spark script relative to the "apps" folder from this repo.
+mainApplicationFile: test/make_predictions_spark_operator.py
+# URL of the Spark image to run
+image: mlflow-spark
 # URI of the MLflow tracking server to use of the format: http://<mlflow-server-service>.<namespace>.svc:5000, where:
 #   - mlflow-server-service - Name of the service that the MLflow tracking server uses
 #   - namespace - Namespace where the MLflow tracking server runs
@@ -15,12 +11,7 @@ mlflowTrackingUri: http://tracking-server.mlflow.svc:5000
 # DNS name of the Spark Thrift Server to connect to (to get data from it for training models) of the format: <spark-service>.<namespace>.svc, where:
 #   - spark-service - Name of the service used by the Spark Thrift server
 #   - namespace - Namespace where the Spark Thrift server runs
-sparkThriftServerDNS: spark-thrift-server.spark.svc
-# Service Account with permissions for creating pods. We run Spark in this pod in the client mode,
-# so Spark driver will be created in this pod, so this pod needs this service account so driver can use it to create executor pods.
-serviceAccountName: spark-sa
-# Name of the service we will create and attach to the pod
-serviceName: dev-pod
+sparkThriftServerDNS: spark-thrift-server.spark.svc.cluster.local
 
 
 # Storage Account and container for storing data warehouse data used by Spark. Those params are used to prepare Spark config files.

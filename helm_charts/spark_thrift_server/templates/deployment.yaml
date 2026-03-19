@@ -15,7 +15,8 @@ spec:
       labels:
         app: spark-thrift-server
     spec:
-      # Service Account with permissions for creating pods and pulling images from ACR
+      # Service Account with permissions for creating pods and pulling images from ACR. We run Spark in this pod in the client mode,
+      # so Spark driver will be created in this pod, so this pod needs this service account so driver can use it to create executor pods.
       serviceAccountName: {{ .Values.serviceAccountName }}
       # In the init container, interpolate the Spark config template file (insert values of env vars)
       initContainers:
@@ -55,17 +56,22 @@ spec:
         - name: thrift
           image: {{ .Values.image.url }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          # Below command starts the Thrift Server and Spark Driver. Driver will be creating executors in separate pods.
+          # Below command starts the Thrift Server (which is a long-running Spark Driver). Driver will run in this pod (client mode) and it will be creating 
+          # executors in separate pods.
+
           # We use spark-submit instead of start-thriftserver.sh in order to run the Thrift Server in the foreground (there is no child process being created,
           # it runs as PID 1). Thanks to that pod doesn't change status into completed and we can see logs.
+          
           # Parameters we use:
           #   - master - Use Kubernetes as a resource manager (use Kubernetes API server as the master)
-          #   - spark.driver.bindAddress is an IP address to which Spark Driver will bind (it will listen on that IP). That should be 
+          #   - spark.driver.bindAddress is an IP address to which Spark driver will bind (it will listen on that IP). That should be 
           #         pod's IP
-          #   - spark.driver.host specifies a DNS name of the Spark Driver which will be used by executor pods to talk to the Driver
-          #         It can be the name of the service which is used by the pod running the Thrift Server and Driver
+          #   - spark.driver.host specifies a DNS name of the Spark driver which will be used by executor pods to talk to the driver
+          #         It can be the name of the service which is used by the pod running the Thrift Server and driver
           #   - spark.driver.port and spark.blockManager.port might be needed (I am not sure) so driver can bind to a proper port (start listening on that port)
-          #   - serviceAccountName is the name of the service account with permissions for creating pods. It will be used by the Driver to create Executor pods.
+          #   - namespace - In which Kubernetes namespace to create executor pods
+          #   - container.image - What image to use for driver and executor pods
+          #   - instances - How many executors to create
           command:
             - /bin/bash
             - -c
@@ -78,8 +84,7 @@ spec:
               --conf spark.driver.host={{ .Values.serviceName }}.{{ .Values.namespace }}.svc.cluster.local \
               --conf spark.driver.port=7077 \
               --conf spark.blockManager.port=7078 \
-              --conf spark.kubernetes.namespace=spark \
-              --conf spark.kubernetes.authenticate.driver.serviceAccountName={{ .Values.serviceAccountName }} \
+              --conf spark.kubernetes.namespace={{ .Values.namespace }} \
               --conf spark.kubernetes.container.image={{ .Values.image.url }} \
               --conf spark.executor.instances=1 \
               --conf spark.executor.memory=1g \

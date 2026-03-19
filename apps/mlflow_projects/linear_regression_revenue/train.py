@@ -12,7 +12,7 @@ import os, sys, pathlib
 # Add "apps" folder to the sys.path so we can import from "apps/common"
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
-from common.spark_class import Spark
+from common.spark_thrift_class import SparkThrift
 
 
 print("Started training")
@@ -61,7 +61,7 @@ FROM
     dwh_fact.customers_total_revenue
 """
 
-spark = Spark(
+spark = SparkThrift(
     host=spark_host,   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
     port=10000, 
     auth='NONE' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.

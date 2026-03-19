@@ -1,0 +1,23 @@
+# Service for exposing the pod. It will be used by Spark, in the "spark.driver.host" parameter when creating Spark session.
+# That parameter is a DNS name of the Spark driver which will be used by executor pods to talk to the Driver
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.serviceName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: dev-pod
+  ports:
+  # Port used as the spark.driver.port parameter when starting Spark Thrift Server
+  - name: driver
+    port: 7077
+    targetPort: 7077
+  - name: block-manager
+    port: 7078
+    targetPort: 7078
+  - name: thrift
+    port: 10000
+    targetPort: 10000
+  type: ClusterIP # For external access use `LoadBalancer` or `Ingress`.

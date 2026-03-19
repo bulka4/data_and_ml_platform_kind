@@ -9,18 +9,14 @@
 # - SA_ACCESS_KEY - Access key to the Storage Account where data warehouse data will be stored
 # - CONTAINER - Name of the container in Storage Account where data warehouse data will be stored
 
+# Create this configmap only if it doesn't exist yet
+{{- if not (lookup "v1" "ConfigMap" .Release.Namespace "spark-conf-template") }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: spark-conf-template
 data:
   spark-defaults.conf.template: |
-    # Assign to Spark a service account with permissions for creating pods (executor pods)
-    # Probably we can delete this since we run Spark in the client mode, so Spark driver runs in the same pod where we run Spark app,
-    # so we need service account attached to the pod from which we run Spark app.
-    # spark.kubernetes.authenticate.driver.serviceAccountName={{ .Values.serviceAccountName }}
-    
-    
     # Set the default filesystem. Used when reading / writing data.
     spark.hadoop.fs.defaultFS=abfss://${CONTAINER}@${STORAGE_ACCOUNT}.dfs.core.windows.net/
 
@@ -50,3 +46,4 @@ data:
     # Set up the iceberg_catalog as a default catalog. When we create a table without specifying a catalog, this catalog will be used.
     # It is needed for dbt since it creates tables without specifying catalog and it looks like we can't specify the catalog there.
     spark.sql.defaultCatalog=iceberg_catalog
+{{- end }}

@@ -1,6 +1,7 @@
 name: mlflow-test
 
 entry_points:
+  # Training a model
   train:
     parameters:
       fit_intercept:
@@ -13,8 +14,10 @@ entry_points:
         type: string
     command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive} --model_name {model_name}"
 
+  # Evaluating the latest created model from the experiment where we run this entrypoint
   eval_latest:
     command: "python3 evaluate_latest.py"
 
+  # Evaluating all created models from the experiment where we run this entrypoint
   eval_all:
     command: "python3 evaluate_all.py"

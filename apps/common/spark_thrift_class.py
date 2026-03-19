@@ -5,7 +5,7 @@ This is a class for interacting with Spark Thrift Server.
 import pandas as pd
 from pyhive import hive
 
-class Spark:
+class SparkThrift:
     def __init__(
         self
         ,host='spark-thrift-server'
