@@ -253,31 +253,41 @@ class MyMLflow():
         if experiment is None:
             raise ValueError(f"Experiment '{experiment_name}' not found")
 
-        mlflow.delete_experiment(experiment.experiment_id)
-
         # Get logged models and runs data for the given experiment
         models = self.client.search_logged_models(experiment_ids=[experiment.experiment_id])
         runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
 
+        # print(models)
+
+        mlflow.delete_experiment(experiment.experiment_id)
+
         if hard_delete:
-            # Prepare a string of the format: "'run_id_1', 'run_id_2', ..., 'run_id_n'"
-            run_ids_string = ', '.join([f"'{run_id}'" for run_id in runs['run_id'].values])
+            if len(runs['run_id'].values) > 0:
+                # Prepare a string of the format: "'run_id_1', 'run_id_2', ..., 'run_id_n'"
+                run_ids_string = ', '.join([f"'{run_id}'" for run_id in runs['run_id'].values])
 
-            # Delete metadata related to runs from the PostgreSQL metadata db
-            self.postgresql.run_query(f"""
-                DELETE FROM metrics         WHERE run_uuid in ({run_ids_string};)
-                DELETE FROM params          WHERE run_uuid in ({run_ids_string});
-                DELETE FROM tags            WHERE run_uuid in ({run_ids_string});
-                DELETE FROM latest_metrics  WHERE run_uuid in ({run_ids_string});
-                DELETE FROM runs            WHERE run_uuid in ({run_ids_string});
-            """)
+                # Delete metadata related to runs from the PostgreSQL metadata db
+                self.postgresql.run_query(f"""
+                    DELETE FROM metrics         WHERE run_uuid in ({run_ids_string});
+                    DELETE FROM params          WHERE run_uuid in ({run_ids_string});
+                    DELETE FROM tags            WHERE run_uuid in ({run_ids_string});
+                    DELETE FROM latest_metrics  WHERE run_uuid in ({run_ids_string});
+                    DELETE FROM runs            WHERE run_uuid in ({run_ids_string});
+                """)
 
-            # Delete info about logged models (so they don't appear in results of the search_logged_models function)
-            self.postgresql.run_query(f"""
-                DELETE
-                FROM logged_models
-                WHERE model_id in ({', '.join([f"'{m.model_id}'" for m in models])});
-            """)
+            if len(models) > 0:
+                model_ids = ', '.join([f"'{m.model_id}'" for m in models])
+                
+                print(model_ids)
+
+                # Delete info about logged models (so they don't appear in results of the search_logged_models function)
+                self.postgresql.run_query(f"""
+                    DELETE
+                    FROM logged_models
+                    WHERE model_id in ({model_ids});
+                """)
+
+            self.postgresql.run_query(f"DELETE FROM experiments WHERE experiment_id={experiment.experiment_id};")
 
         # Return paths where models and artifacts are saved, so we can delete them manually if we want
         return np.concatenate(([model.artifact_location for model in models], runs['artifact_uri'].values))

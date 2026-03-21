@@ -4,7 +4,7 @@ from airflow import DAG
 from datetime import datetime
 import sys, pathlib
 
-# Add parent folder to the sys.path so we can import modules from there
+# Add the 'airflow/dags' folder to the sys.path so we can import modules from there
 sys.path.append(str(pathlib.Path(__file__).parent.resolve()))
 
 from common.jinja import Jinja
@@ -41,7 +41,7 @@ params={
     }
     ,'dbtCommand': dbt_command
 }
-pod_spec = jinja.prepare_pod_spec(params, "/opt/airflow/dags/dbt/dbt.yaml")
+pod_spec = jinja.prepare_pod_spec("/opt/airflow/dags/dbt/dbt.yaml", params)
 
 
 # =============== DAG ===============

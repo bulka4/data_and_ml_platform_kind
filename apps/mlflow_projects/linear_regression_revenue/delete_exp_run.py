@@ -18,22 +18,23 @@ import numpy as np
 my_mlflow = MyMLflow()
 
 # =========== Delete a run =================
-experiment_name = 'linear_regression_revenue'
-for run_id in [
-    "73191f7e15f341489655825c00f3d15b"
-]:
-    artifact_paths = my_mlflow.delete_run(
-        run_id=run_id
-        ,experiment_name=experiment_name
-        ,hard_delete=True
-    )
-    print(artifact_paths)
+# experiment_name = 'linear_regression_revenue'
+# for run_id in [
+#     "73191f7e15f341489655825c00f3d15b"
+# ]:
+#     artifact_paths = my_mlflow.delete_run(
+#         run_id=run_id
+#         ,experiment_name=experiment_name
+#         ,hard_delete=True
+#     )
+#     print(artifact_paths)
 
 
 
 # =========== Delete an experiment =================
-# artifact_paths = my_mlflow.delete_experiment('linear_regression_revenue')
+artifact_paths = my_mlflow.delete_experiment('linear_regression_revenue', hard_delete=True)
 # print(artifact_paths)
 
+# We can restore the experiment if we didn't perform hard delete
 # experiment = mlflow.get_experiment_by_name('linear_regression_revenue')
 # my_mlflow.client.restore_experiment(experiment.experiment_id)

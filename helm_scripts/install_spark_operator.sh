@@ -8,7 +8,7 @@ helm repo update
 #   - sparkOperatorVersion is of the format: v1beta2-<operator-version>-<spark-version>, where <spark-version> must match version of Spark
 #       we want to run
 #   - spark.jobNamespaces - Namespaces where Operator will be looking for deployed SparkApplication resources
-helm install spark-operator spark-operator/spark-operator -n spark --create-namespace \
+helm install spark-operator spark-operator/spark-operator -n spark \
   --set sparkOperatorVersion=v1beta2-2.1.0-3.5.0 \
   --set spark.jobNamespaces={spark} \
   --set webhook.enable=true \

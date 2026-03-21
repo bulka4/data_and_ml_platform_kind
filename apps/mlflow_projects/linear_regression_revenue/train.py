@@ -56,6 +56,7 @@ spark_host = os.getenv('SPARK_THRIFT_SERVER_DNS')
 query = """
 SELECT
     clientID
+    ,month
     ,revenue
 FROM
     dwh_fact.customers_total_revenue
@@ -68,7 +69,7 @@ spark = SparkThrift(
 )
 
 df = spark.read_query(query)
-x = df[['clientID']]
+x = df[['clientID', 'month']]
 y = df['revenue']
 
 # -----------------------------

@@ -6,6 +6,9 @@ For running this code we need to prepare the following environment variables fir
     - STORAGE_ACCOUNT, CONTAINER - Name of the Azure Storage Account and container used as an Iceberg catalog (data warehouse)
     - SA_ACCESS_KEY - Access key to the Storage Account used
     - CATALOG_FOLDER - Folder in the Storage Account container used as an Iceberg catalog (to store all the data)
+
+We need to provide Spark configuration in this script as there is a problem with providing dynamic values for those configurations (e.g. from secrets)
+in the spark-defaults.conf file or in the SparkApplication CRD when using Spark Operator.
 """
 
 import os, sys, pathlib
@@ -15,7 +18,6 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent.resolve()))
 
 from common.spark_thrift_class import SparkThrift
 from common.spark import create_session, prepare_iceberg_configs
-from pyspark.sql import SparkSession
 import mlflow
 import mlflow.pyfunc
 import numpy as np
@@ -37,26 +39,26 @@ spark_thrift = SparkThrift(
 model = mlflow.pyfunc.load_model("models:/linear_regression_revenue/Production")
 
 # Load data about clients for which we will make predictions
-clients = spark_thrift.read_query("select clientID from dwh_dim.clients;")
+clients = spark_thrift.read_query("select clientID, month from dwh_fact.customers_total_revenue;")
 
 # Make predictions with the model
 predictions = model.predict(clients)
 
 # Prepare a 2D array called 'predictions' of the format:
     # [
-    #     [client_id_1, prediction]
-    #     ,[client_id_2, prediction]
+    #     [client_id_1, month_1, prediction]
+    #     ,[client_id_2, month_2, prediction]
     #     ...
     # ]
 # To save it in the Iceberg table
-client_ids = clients['clientID'].values
-client_ids = np.array(client_ids).reshape(len(client_ids), 1)
+# client_ids = clients['clientID'].values
+# client_ids = np.array(client_ids).reshape(len(client_ids), 1)
 predictions = np.array(predictions).reshape(len(predictions), 1)
 
 # print('client_ids: ', client_ids)
 # print('predictions: ', predictions)
 
-predictions = np.concatenate((client_ids, predictions), axis = 1)
+predictions = np.concatenate((clients.values, predictions), axis = 1)
 # print('predictions: ', predictions)
 
 
@@ -69,7 +71,7 @@ spark_configs = prepare_iceberg_configs()
 # Create SparkSession using configs prepared previously. It will be used to save data in Iceberg catalog.
 spark = create_session(app_name="write_iceberg", configs=spark_configs)
 
-spark_df = spark.createDataFrame(predictions, schema=['clientID', 'predictedRevenue'])
+spark_df = spark.createDataFrame(predictions, schema=['clientID', 'month', 'predictedRevenue'])
 
 # We create a table if it doesn't exist yet and then overwrite it. If we try to use only createOrReplace without creating this table earlier, 
 # it gives an error that it can't find the metadata/version-hint.text file even though it does exist. Probably it is about some delay, the file
@@ -79,10 +81,11 @@ spark_df = spark.createDataFrame(predictions, schema=['clientID', 'predictedReve
 spark_thrift.run_query("""
 CREATE TABLE IF NOT EXISTS dwh_fact.client_total_revenue_predictions (
     clientID INT
+    ,month date
     ,predictedRevenue int
 )
 USING ICEBERG
 """)
 
 # Add records to the Iceberg table (overwrite the existing table). 
-spark_df.writeTo("dwh_fact.client_total_revenue_predictions").overwrite()
+spark_df.writeTo("dwh_fact.client_total_revenue_predictions").overwritePartitions()

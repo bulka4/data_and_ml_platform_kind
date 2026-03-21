@@ -2,6 +2,11 @@
 # acr:
 #   secretName: acr-secret
 
+# Parameters related to the PVC with Airflow DAGs we mount into Airflow pods
+dagsPvc:
+  # Path on the host which we will mount
+  hostPath: /apps
+
 airflow:
   executor: CeleryExecutor
 
@@ -46,7 +51,7 @@ airflow:
       - name: dags
         mountPath: /opt/airflow/dags
         # Path in the PV (i.e. in the repo) to the folder with DAGs code
-        subPath: apps/airflow/dags
+        subPath: airflow/dags
     # Use our own service account which has specified a secret for pulling images.
     serviceAccount:
       create: False
@@ -66,7 +71,7 @@ airflow:
       - name: dags
         mountPath: /opt/airflow/dags
         # Path in the PV (i.e. in the repo) to the folder with DAGs code
-        subPath: apps/airflow/dags
+        subPath: airflow/dags
     # Use our own service account which has specified a secret for pulling images.
     serviceAccount:
       create: False
@@ -86,7 +91,7 @@ airflow:
       - name: dags
         mountPath: /opt/airflow/dags
         # Path in the PV (i.e. in the repo) to the folder with DAGs code
-        subPath: apps/airflow/dags
+        subPath: airflow/dags
     # Use our own service account which has specified a secret for pulling images.
     serviceAccount:
       create: False
@@ -113,7 +118,7 @@ airflow:
       - name: dags
         mountPath: /opt/airflow/dags
         # Path in the PV (i.e. in the repo) to the folder with DAGs code
-        subPath: apps/airflow/dags
+        subPath: airflow/dags
     # Use our own service account which has specified a secret for pulling images.
     serviceAccount:
       create: False

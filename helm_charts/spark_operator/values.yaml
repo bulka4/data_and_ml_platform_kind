@@ -1,6 +1,11 @@
+# Whether or not to create the SparkApplication resource
+createSparkApplication: true
+
+# Namespace where to run Spark Operator (where to run Spark driver)
 namespace: spark
 imagePullPolicy: IfNotPresent
-# path of the Spark script to run. This is the path to the Spark script relative to the "apps" folder from this repo.
+# path of the Spark script to run. This is the path to the Spark script relative to the "apps" folder from this repo (because we mount
+# the 'apps' folder from the host into the Spark driver and executor pods in the spark-application.yaml).
 mainApplicationFile: test/make_predictions_spark_operator.py
 # URL of the Spark image to run
 image: mlflow-spark

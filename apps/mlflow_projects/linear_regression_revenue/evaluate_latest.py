@@ -22,8 +22,8 @@ my_mlflow = MyMLflow()
 # Load test data (example)
 # -----------------------------
 np.random.seed(123)
-# Prepare X_test an y_text of shape (20, 1)
-X_test = np.random.rand(20, 1) * 10
+# Prepare X_test (20, 2) and y_text of shape (20, 1)
+X_test = np.random.rand(20, 2) * 10
 y_test = 3 * X_test.squeeze() + 5 + np.random.randn(20) * 2
 
 

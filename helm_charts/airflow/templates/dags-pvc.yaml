@@ -13,7 +13,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /git_code
+    path: {{ .Values.dagsPvc.hostPath }}
   # csi:
   #   driver: file.csi.azure.com  # Driver for Azure File Share
   #   volumeHandle: "{{ .Values.storageAccountName }}#{{ .Values.fileShareName }}""

@@ -54,20 +54,26 @@ spark_thrift = SparkThrift(
 model = mlflow.pyfunc.load_model("models:/linear_regression_revenue/Production")
 
 # Load data about clients for which we will make predictions
-clients = spark_thrift.read_query("select clientID from dwh_dim.clients;")
+clients = spark_thrift.read_query("select clientID, month from dwh_fact.customers_total_revenue;")
 # clients = spark.run_query("drop table dwh_fact.customers_total_tevenue;")
 
 predictions = model.predict(clients)
 
-client_ids = clients['clientID'].values
-client_ids = np.array(client_ids).reshape(len(client_ids), 1)
+# Prepare a 2D array called 'predictions' of the format:
+    # [
+    #     [client_id_1, month_1, prediction]
+    #     ,[client_id_2, month_2, prediction]
+    #     ...
+    # ]
+# client_ids = clients['clientID'].values
+# client_ids = np.array(client_ids).reshape(len(client_ids), 1)
 predictions = np.array(predictions).reshape(len(predictions), 1)
 
-print('client_ids: ', client_ids)
-print('predictions: ', predictions)
+# print('client_ids: ', client_ids)
+# print('predictions: ', predictions)
 
-predictions = np.concatenate((client_ids, predictions), axis = 1)
-print('predictions: ', predictions)
+predictions = np.concatenate((clients.values, predictions), axis = 1)
+# print('predictions: ', predictions)
 
 # Start a new Spark Session for saving data in Iceberg catalog. Use Kubernetes as a resource manager (master) to start a new Spark dirver.
 # We don't use here Spark Thrift Server driver and we need to provide the same Spark configuration as for the Thrift Server.
@@ -86,16 +92,21 @@ spark = SparkSession.builder \
     .config("spark.blockManager.port", 7078) \
     .getOrCreate()
 
-spark_df = spark.createDataFrame(predictions, schema=['clientID', 'predictedRevenue'])
+spark_df = spark.createDataFrame(predictions, schema=['clientID', 'month', 'predictedRevenue'])
+
+# We create a table if it doesn't exist yet and then overwrite it. If we try to use only createOrReplace without creating this table earlier, 
+# it gives an error that it can't find the metadata/version-hint.text file even though it does exist. Probably it is about some delay, the file
+# exists but Spark still for some time can't see it.
 
 # Create the Iceberg table if it doesn't exist yet
 spark_thrift.run_query("""
 CREATE TABLE IF NOT EXISTS dwh_fact.client_total_revenue_predictions (
     clientID INT
+    ,month date
     ,predictedRevenue int
 )
 USING ICEBERG
 """)
 
-# Add records to the Iceberg table
-spark_df.writeTo("dwh_fact.client_total_revenue_predictions").append()
+# Add records to the Iceberg table (overwrite the existing table). 
+spark_df.writeTo("dwh_fact.client_total_revenue_predictions").overwritePartitions()

@@ -3,11 +3,10 @@
 
 select
     clientID
+    concat(date_format(date, 'yyyy-MM'), '-01') as month
     ,sum(totalPrice) as revenue
 from
     {{ ref('fact_sales') }}
-where
-    year(date) = 2025
-    and month(date) = 1
 group by
     clientID
+    ,concat(date_format(date, 'yyyy-MM'), '-01')

@@ -5,17 +5,16 @@
 # We create a different folder for Spark configuration '/opt/spark/custom_conf' because Spark Operator already mounts into '/opt/spark/conf', so
 # we can't mount another volume there.
 
-{{- if .Values.createSparkApplication }}
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: pyspark-app
-  namespace: {{ .Values.namespace }}
+  name: {{ params.resourceName }}
+  namespace: {{ params.namespace }}
 spec:
   type: Python
   mode: cluster
   pythonVersion: "3"
-  imagePullPolicy: {{ .Values.imagePullPolicy }}
+  imagePullPolicy: {{ params.imagePullPolicy }}
   sparkVersion: "3.5.0"
   restartPolicy:
     type: Never
@@ -23,10 +22,10 @@ spec:
   # Spark script to run. That is a path inside the Spark Driver Pod's container. We need to start this path with 'local:///'
   # if we want to use a local file from the image. Otherwise we need to use the `spark.kubernetes.file.upload.path` Spark configuration
   # to provide information about the location of the script to run.
-  mainApplicationFile: "local:///opt/spark/scripts/{{ .Values.mainApplicationFile }}"
+  mainApplicationFile: "local:///opt/spark/scripts/{{ params.mainApplicationFile }}"
 
   # Docker image with Spark
-  image: {{ .Values.image }}
+  image: {{ params.image }}
   # Get a secret with value for authentication to the ACR.
   # imagePullSecrets:
   # - acr-auth
@@ -53,27 +52,27 @@ spec:
     env:
       # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
       - name: MLFLOW_TRACKING_URI
-        value: {{ .Values.mlflowTrackingUri }}
+        value: {{ params.mlflowTrackingUri }}
       # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
       # from it for training models).
       - name: SPARK_THRIFT_SERVER_DNS
-        value: {{ .Values.sparkThriftServerDNS }}
+        value: {{ params.sparkThriftServerDNS }}
       # Env vars related to the Azure Storage Account used for Iceberg catalog. Those values are used to prepare Spark configs
       # in the Python script with Spark app
       - name: STORAGE_ACCOUNT
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.storageAccount.secret }}
+            name: {{ params.storageAccount.secret }}
             key: storage-account
       - name: SA_ACCESS_KEY
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.storageAccount.secret }}
+            name: {{ params.storageAccount.secret }}
             key: sa-access-key
       - name: CONTAINER
-        value: {{ .Values.storageAccount.container }}
+        value: {{ params.storageAccount.container }}
       - name: CATALOG_FOLDER
-        value: {{ .Values.iceberg.catalogFolder }}
+        value: {{ params.icebergCatalogFolder }}
 
 
   # Specify parameters for the Spark Executors' Pods 
@@ -92,25 +91,24 @@ spec:
     env:
       # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
       - name: MLFLOW_TRACKING_URI
-        value: {{ .Values.mlflowTrackingUri }}
+        value: {{ params.mlflowTrackingUri }}
       # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
       # from it for training models).
       - name: SPARK_THRIFT_SERVER_DNS
-        value: {{ .Values.sparkThriftServerDNS }}
+        value: {{ params.sparkThriftServerDNS }}
       # Env vars related to the Azure Storage Account used for Iceberg catalog. Those values are used to prepare Spark configs
       # in the Python script with Spark app
       - name: STORAGE_ACCOUNT
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.storageAccount.secret }}
+            name: {{ params.storageAccount.secret }}
             key: storage-account
       - name: SA_ACCESS_KEY
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.storageAccount.secret }}
+            name: {{ params.storageAccount.secret }}
             key: sa-access-key
       - name: CONTAINER
-        value: {{ .Values.storageAccount.container }}
+        value: {{ params.storageAccount.container }}
       - name: CATALOG_FOLDER
-        value: {{ .Values.iceberg.catalogFolder }}
-{{- end }}
+        value: {{ params.icebergCatalogFolder }}
