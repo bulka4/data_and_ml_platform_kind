@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: clients_total_revenue_predictions_metrics
+  - name: ml_metrics_clients_total_revenue_predictions_metrics
     description: "This table contains metrics about ML model predictions about client monthly revenue."
     columns:
       - name: month

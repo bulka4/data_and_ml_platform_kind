@@ -1,0 +1,1 @@
+Folder with tables which will be created in the 'dwh_raw' schema.

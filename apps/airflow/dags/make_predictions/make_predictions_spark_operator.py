@@ -2,10 +2,13 @@
 This script performs the same operations as the 'make_predictions.py' but this one is supposed to be run using Spark Operator. Spark Operator will
 create driver and executor pods which will save model's predictions in the Iceberg catalog.
 
-For running this code we need to prepare the following environment variables first, which will be used to prepare configs for Spark:
-    - STORAGE_ACCOUNT, CONTAINER - Name of the Azure Storage Account and container used as an Iceberg catalog (data warehouse)
-    - SA_ACCESS_KEY - Access key to the Storage Account used
-    - CATALOG_FOLDER - Folder in the Storage Account container used as an Iceberg catalog (to store all the data)
+Before we run this script we need to:
+    - Prepare the following environment variables first, which will be used to prepare configs for Spark:
+        - STORAGE_ACCOUNT, CONTAINER - Name of the Azure Storage Account and container used as an Iceberg catalog (data warehouse)
+        - SA_ACCESS_KEY - Access key to the Storage Account used
+        - CATALOG_FOLDER - Folder in the Storage Account container used as an Iceberg catalog (to store all the data)
+    - Create the dwh_fact.clients_total_revenue_predictions table using dbt, so this table is managed by dbt and this script
+        only populates it with data.
 
 We need to provide Spark configuration in this script as there is a problem with providing dynamic values for those configurations (e.g. from secrets)
 in the spark-defaults.conf file or in the SparkApplication CRD when using Spark Operator.
@@ -48,19 +51,6 @@ model_info = mlflow.MlflowClient().get_latest_versions(
     stages=[model_stage]
 )[0]
 model_uri = f'models:/{model_name}/{model_info.version}'
-
-# Create the target table with predictions if it doesn't exist yet
-spark_thrift.run_query(
-    """                       
-    CREATE TABLE IF NOT EXISTS dwh_fact.clients_total_revenue_predictions (
-        clientID INT            -- Client for which we make predictions
-        ,month date             -- Month for which we make predictions
-        ,predictedRevenue float -- Predicted revenue
-        ,modelURI varchar(200)  -- MLflow registry URI of the model used to make predictions
-    )
-    USING ICEBERG
-    """
-)
 
 # Load data about clients and months for which we will make predictions (load only those recprds for which we didn't make predictions yet)
 clients = spark_thrift.read_query(

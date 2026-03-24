@@ -1,0 +1,1 @@
+This folder contains external tables. They are defined in dbt so we can refer them using 'ref()' and create a dependency but they are being populated with data by external processes, outside of dbt.

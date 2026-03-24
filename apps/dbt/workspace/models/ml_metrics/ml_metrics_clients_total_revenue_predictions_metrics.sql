@@ -1,23 +1,12 @@
 /*This code adds to the target table one record with metrics calculated for the latest month from the source table clients_total_revenue.*/
 
+-- If the target table doesn't exist yet, use pre-hook to create a dummy record with a proper date which is a month earlier than the latest month
+-- in the clients_total_revenue table.
+-- Thanks to that, the oldMonth column from the "month" CTE is equal to this month and the condition 
+-- "rev.month > (select oldMonth from month)" includes only the latest month.
 {{ config(
     alias="clients_total_revenue_predictions_metrics"
-    -- If the target table doesn't exist yet, create a dummy record with a proper date which is a month earlier than the latest month
-    -- in the clients_total_revenue table.
-    -- Thanks to that, the oldMonth column from the "month" CTE is equal to this month and the condition 
-    -- "rev.month > (select oldMonth from month)" includes only the latest month.
-    ,pre-hook="""
-        CREATE TABLE IF NOT EXISTS dwh_fact.clients_total_revenue_predictions_metrics AS
-        SELECT
-            add_months(max(month), -1) as month
-            ,null as RMSE_1
-            ,null as RMSE_2
-            ,null as RMSE_3
-            ,null as maxError
-            ,null as modelURI
-        FROM
-            {{ ref('dwh_fact', 'clients_total_revenue_predictions') }}
-    """
+    ,pre-hook="{{ create_ml_metrics_clients_total_revenue_predictions_metrics() }}"
 ) }}
 
 -- Take the latest months from the current target table (with metrics) and source table (with predictions)
@@ -27,13 +16,13 @@ with month as (
         ,s.newMonth
     from
         (select max(month) as oldMonth from {{ this }}) as t
-        cross join (select max(month) as newMonth from {{ ref('dwh_fact', 'clients_total_revenue_predictions') }}) as s
+        cross join (select max(month) as newMonth from {{ ref('fact_clients_total_revenue_predictions') }}) as s
 )
 
 -- Get URI of the latest model used
 ,latest_model_uri as (
     select top(1) modelURI
-    from {{ ref('dwh_fact', 'clients_total_revenue_predictions') }}
+    from {{ ref('fact_clients_total_revenue_predictions') }}
     order by month desc
 )
 
@@ -49,11 +38,11 @@ with month as (
             else predictedRevenue
         end as predictedRevenue
     from
-        {{ ref('dwh_fact', 'clients_total_revenue_predictions') }} as pred
+        {{ ref('fact_clients_total_revenue_predictions') }} as pred
 
         cross join latest_model_uri
     where
-        month > (select date_add(max(month), -3) from {{ ref('dwh_fact', 'clients_total_revenue_predictions') }})
+        month > (select date_add(max(month), -3) from {{ ref('fact_clients_total_revenue_predictions') }})
 )
 
 -- RMSE for the last 1 month (those predictions were made using the latest model so we don't need to use the 'predictions' CTE)
@@ -64,7 +53,7 @@ with month as (
     from
         {{ ref('dwh_fact', 'clients_total_revenue') }} as rev
 
-        left join {{ ref('dwh_fact', 'clients_total_revenue_predictions') }} as pred
+        left join {{ ref('fact_clients_total_revenue_predictions') }} as pred
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
@@ -109,7 +98,7 @@ with month as (
     from
         {{ ref('dwh_fact', 'clients_total_revenue') }} as rev
 
-        left join {{ ref('dwh_fact', 'clients_total_revenue_predictions') }} as pred
+        left join {{ ref('fact_clients_total_revenue_predictions') }} as pred
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
