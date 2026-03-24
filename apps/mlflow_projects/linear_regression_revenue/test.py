@@ -7,7 +7,7 @@ import sys, pathlib
 # Add "apps" folder to the sys.path so we can import from "apps/common"
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
-from common.my_mlflow import MyMLflow
+from common.mlflow.my_mlflow import MyMLflow
 from common.postgresql import PostgreSQL
 
 import mlflow
@@ -26,10 +26,21 @@ postgresql = PostgreSQL(
 )
 
 
+experiment = mlflow.get_experiment_by_name('linear_regression_revenue')
+models = my_mlflow.client.search_logged_models(
+    experiment_ids=[experiment.experiment_id]
+    ,order_by=[
+        {"field_name": "creation_timestamp", "ascending": False}  # Highest accuracy first
+    ]
+)
+
+print(models)
+
+
 
 # =========== Load the latest model ============
 # experiment_name = 'linear_regression_revenue'
-# latest_model = my_mlflow.load_latest_model(experiment_name)
+# latest_model = my_mlflow.find_latest_model(experiment_name)
 # print(type(latest_model))
 
 

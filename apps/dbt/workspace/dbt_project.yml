@@ -22,24 +22,31 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# Below configs has the following structure and role:
+  # models:
+  #   data_warehouse:
+  #     # Configs for models from the models/folder_name folder.
+  #     folder_name:
+  #       # Tables will be saved in the schema called {project_schema}_{profiles_schema}, where:
+  #       #   - project_schema - schema name specified in dbt_project.yml file
+  #       #   - profiles_schema - schema name specified in profiles.yml file
+  #       +schema: schema_name 
+  #       # How to build models from this folder (e.g. as a table or view)
+  #       +materialized: table
 models:
   data_warehouse:
-    # Set up configs for models from the models/dwh_fact folder.
+    # dwh_fact schema with transformed fact tables for reporting
     dwh_fact:
-      # Tables will be saved in the schema called {project_schema}_{profiles_schema}, where:
-      #   - project_schema - schema name specified in dbt_project.yml file
-      #   - profiles_schema - schema name specified in profiles.yml file
       +schema: fact
-      # How to save models. It can be 'table' or a 'view'.
       +materialized: table
-    # Set up configs for models from the models/dwh_dim folder.
+    # dwh_fact schema with transformed dimension tables for reporting
     dwh_dim:
       +schema: dim
       +materialized: table
     dwh_raw:
       +schema: raw
       +materialized: table
-    # Folders to create tables which simulates data imported from external sources
+    # Schema with manually created tables which simulates data imported from external sources
     source:
       source1:
         +schema: source1
@@ -47,3 +54,7 @@ models:
       source2:
         +schema: source2
         +materialized: table
+    # Schema with tables with ML model evaluation metrics, used for monitoring models performance
+    ml_metrics:
+      +schema: ml_metrics
+      +materialized: table

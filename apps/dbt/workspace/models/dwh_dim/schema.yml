@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: dim_clients
+    description: "Total revenue for a client and month"
+    columns:
+      - name: clientID
+        description: "Client ID"
+      - name: clientName
+        description: "Client name"
+      - name: clientCountry
+        description: "Client country"
+
+  - name: dim_products
+    description: "Total revenue for a client and month"
+    columns:
+      - name: productID
+        description: "Product ID"
+      - name: productName
+        description: "Product name"
+      - name: price
+        description: "Product price"

@@ -53,23 +53,27 @@ spark_host = os.getenv('SPARK_THRIFT_SERVER_DNS')
 # Get data for training
 # -----------------------------
 
-query = """
-SELECT
-    clientID
-    ,month
-    ,revenue
-FROM
-    dwh_fact.customers_total_revenue
-"""
-
 spark = SparkThrift(
     host=spark_host,   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
     port=10000, 
     auth='NONE' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
 )
 
+query = """
+SELECT
+    next.clientID
+    ,previous.revenue as revenueLastMonth
+    ,next.revenue
+FROM
+    dwh_fact.clients_total_revenue as previous
+
+    join dwh_fact.clients_total_revenue as next
+        on next.clientID = previous.clientID
+        and next.month = add_months(previous.month, 1)
+"""
+
 df = spark.read_query(query)
-x = df[['clientID', 'month']]
+x = df[['clientID', 'revenueLastMonth']]
 y = df['revenue']
 
 # -----------------------------
@@ -94,7 +98,7 @@ model.fit(X_train, y_train)
     
 # mlflow.set_experiment("linear_regression")
 
-# Start a run and assign the model to it
+# Start a run and assign the model to it (or assign it to the run already started with 'mlflow run' command)
 with mlflow.start_run() as run:
     mlflow.sklearn.log_model(model, name=args.model_name)
 print("Finished training")

@@ -19,7 +19,7 @@ import sys, pathlib
 # Add "apps" folder to the sys.path so we can import from "apps/common"
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
-from common.my_mlflow import MyMLflow
+from common.mlflow.my_mlflow import MyMLflow
 
 
 # ================= Script configuration =================
@@ -47,7 +47,9 @@ client = MlflowClient()
 #    - We have been evaluating a single model in a single MLflow run
 #    - Each run was logging evaluation metrics
 #    - Each run got assigned tag "evaluated_model_uri" indicating which model has been evaluated
-model_uri = my_mlflow.get_the_best_model_uri(experiment_name=experiment_name, metrics=metrics)
+model_uri = my_mlflow.get.get_the_best_model_uri(experiment_name=experiment_name, metrics=metrics)
+
+# print(model_uri)
 
 # Register the model
 mlflow.register_model(model_uri, "linear_regression_revenue")

@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: fact_clients_total_revenue
+    description: "Total revenue for a client and month"
+    columns:
+      - name: clientID
+        description: "Client ID"
+      - name: month
+        description: "Month for which revenue was calculated"
+      - name: revenue
+        description: "Monthly revenue"
+  
+  - name: fact_sales
+    description: "Total revenue for a client and month"
+    columns:
+      - name: clientID
+        description: "Client ID"
+      - name: productID
+        description: "Product ID"
+      - name: date
+        description: "Date of the sale"
+      - name: amount
+        description: "Amount of the product sold"
+      - name: totalPrice
+        description: "Total price of the product sold"

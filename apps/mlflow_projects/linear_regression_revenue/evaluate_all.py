@@ -12,7 +12,7 @@ import os, sys, pathlib
 # Add "apps" folder to the sys.path so we can import from "apps/common"
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
-from common.my_mlflow import MyMLflow
+from common.mlflow.my_mlflow import MyMLflow
 
 
 my_mlflow = MyMLflow()
@@ -24,7 +24,7 @@ my_mlflow = MyMLflow()
 np.random.seed(123)
 # Prepare X_test (20, 2) and y_text of shape (20, 1)
 X_test = np.random.rand(20, 2) * 10
-y_test = 3 * X_test.squeeze() + 5 + np.random.randn(20) * 2
+y_test = np.random.randn(20) * 2
 
 
 # ============== Load all the models from the experiment =================

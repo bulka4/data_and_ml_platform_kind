@@ -18,6 +18,7 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent.resolve()))
 
 from common.spark_thrift_class import SparkThrift
 from common.spark import create_session, prepare_iceberg_configs
+from pyspark.sql.functions import to_date, concat, lit, lpad, col
 import mlflow
 import mlflow.pyfunc
 import numpy as np
@@ -36,30 +37,59 @@ spark_thrift = SparkThrift(
 )
 
 # Load model from MLflow registry (saved by the promote_model.py script)
-model = mlflow.pyfunc.load_model("models:/linear_regression_revenue/Production")
+model_name = 'linear_regression_revenue'
+model_stage = 'Production'
+model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_stage}")
 
-# Load data about clients for which we will make predictions
-clients = spark_thrift.read_query("select clientID, month from dwh_fact.customers_total_revenue;")
+# Get model URI with the version (that's a unique identifier of the model which will save in the target table with predictions, to indicate that
+# this model was used)
+model_info = mlflow.MlflowClient().get_latest_versions(
+    name=model_name,
+    stages=[model_stage]
+)[0]
+model_uri = f'models:/{model_name}/{model_info.version}'
+
+# Create the target table with predictions if it doesn't exist yet
+spark_thrift.run_query(
+    """                       
+    CREATE TABLE IF NOT EXISTS dwh_fact.clients_total_revenue_predictions (
+        clientID INT            -- Client for which we make predictions
+        ,month date             -- Month for which we make predictions
+        ,predictedRevenue float -- Predicted revenue
+        ,modelURI varchar(200)  -- MLflow registry URI of the model used to make predictions
+    )
+    USING ICEBERG
+    """
+)
+
+# Load data about clients and months for which we will make predictions (load only those recprds for which we didn't make predictions yet)
+clients = spark_thrift.read_query(
+    """
+    SELECT
+        rev.clientID
+        ,add_months(month, 1) as nextMonth  -- next month for which predictions will be made
+        ,revenue as revenueLastMonth        -- last month revenue based on which we make predictions
+    FROM
+        dwh_fact.clients_total_revenue AS rev
+
+        LEFT JOIN dwh_fact.clients_total_revenue_predictions AS pred
+            ON pred.clientID = rev.clientID
+            AND pred.month = add_months(rev.month, 1)
+    WHERE
+        pred.clientID IS NULLL
+    """
+)
 
 # Make predictions with the model
-predictions = model.predict(clients)
+predictions = model.predict(clients[['clientID', 'revenueLastMonth']])
 
-# Prepare a 2D array called 'predictions' of the format:
-    # [
-    #     [client_id_1, month_1, prediction]
-    #     ,[client_id_2, month_2, prediction]
-    #     ...
-    # ]
-# To save it in the Iceberg table
-# client_ids = clients['clientID'].values
-# client_ids = np.array(client_ids).reshape(len(client_ids), 1)
+# Prepare a 2D array called 'predictions' to save it in the Iceberg table. 
+# It has columns: 
+#   - clientID - Input for a model
+#   - nextMonth - Month for which we made predictions
+#   - predictedRevenueNextMonth - Predicted revenue for the next month
 predictions = np.array(predictions).reshape(len(predictions), 1)
-
-# print('client_ids: ', client_ids)
-# print('predictions: ', predictions)
-
-predictions = np.concatenate((clients.values, predictions), axis = 1)
-# print('predictions: ', predictions)
+predictions = np.concatenate((clients[['clientID', 'nextMonth']].values, predictions), axis = 1)
 
 
 # Prepare configs needed to work with Spark and Iceberg. The prepare_iceberg_configs function requires to prepare the following environment variables first:
@@ -72,20 +102,8 @@ spark_configs = prepare_iceberg_configs()
 spark = create_session(app_name="write_iceberg", configs=spark_configs)
 
 spark_df = spark.createDataFrame(predictions, schema=['clientID', 'month', 'predictedRevenue'])
+# Create a date and model_uri columns
+spark_df = spark_df.withColumn('modelURI', model_uri)
 
-# We create a table if it doesn't exist yet and then overwrite it. If we try to use only createOrReplace without creating this table earlier, 
-# it gives an error that it can't find the metadata/version-hint.text file even though it does exist. Probably it is about some delay, the file
-# exists but Spark still for some time can't see it.
-
-# Create the Iceberg table if it doesn't exist yet
-spark_thrift.run_query("""
-CREATE TABLE IF NOT EXISTS dwh_fact.client_total_revenue_predictions (
-    clientID INT
-    ,month date
-    ,predictedRevenue int
-)
-USING ICEBERG
-""")
-
-# Add records to the Iceberg table (overwrite the existing table). 
-spark_df.writeTo("dwh_fact.client_total_revenue_predictions").overwritePartitions()
+# Add records to the Iceberg table. 
+spark_df.writeTo("dwh_fact.clients_total_revenue_predictions").append()

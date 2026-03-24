@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: clients_total_revenue_predictions_metrics
+    description: "This table contains metrics about ML model predictions about client monthly revenue."
+    columns:
+      - name: month
+        description: "Month for which metrics were calculated (using predictions and real values for this month)"
+      - name: RMSE_1
+        description: "RMSE for the last 1 month (the month indicated by the month column)"
+      - name: RMSE_2
+        description: "RMSE for the last 2 months (the month indicated by the month column and the previous month)"
+      - name: RMSE_3
+        description: "RMSE for the last 3 months (the month indicated by the month column and the previous two months)"
+      - name: maxError
+        description: "Max error for the month indicated by the month column (calculated using formula abs(real_revenue - predicted_revenue))"
+      - name: modelURI
+        description: "MLflow registry URI of the model used for making predictions"

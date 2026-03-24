@@ -1,12 +1,14 @@
 """
 This is a script for testing. It is the best to use it in the pod created using the "helm_charts/development_pods/mlflow" Helm chart.
 
+This script is supposed to be run without using Spark Operator, it can be ran on its own.
+
 This script:
     - Loads data (to make predictions for) from the Iceberg catalog using PyHive and by connecting to the Spark Thrift Server
     - Loads a model from MLflow registry
     - Makes predictions with it
-    - Saves predictions in the Iceberg catalog using Spark (we run Spark here in a client mode, creating a new driver. We don't use fro that
-        the Thrift server).
+    - Saves predictions in the Iceberg catalog using Spark (we run Spark here in a client mode, creating a new driver on the server where this
+        script runs. We don't use for that the Thrift server).
 """
 
 import os, sys, pathlib
@@ -16,6 +18,7 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 
 from common.spark_thrift_class import SparkThrift
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import to_date, concat, lit, lpad, col
 import mlflow
 import mlflow.pyfunc
 import numpy as np
@@ -54,7 +57,14 @@ spark_thrift = SparkThrift(
 model = mlflow.pyfunc.load_model("models:/linear_regression_revenue/Production")
 
 # Load data about clients for which we will make predictions
-clients = spark_thrift.read_query("select clientID, month from dwh_fact.customers_total_revenue;")
+clients = spark_thrift.read_query("""
+SELECT
+    clientID
+    ,year(to_date(month, 'yyyy-MM-dd')) as year
+    ,month(to_date(month, 'yyyy-MM-dd')) as month
+FROM
+    dwh_fact.customers_total_revenue                               
+""")
 # clients = spark.run_query("drop table dwh_fact.customers_total_tevenue;")
 
 predictions = model.predict(clients)
@@ -92,21 +102,36 @@ spark = SparkSession.builder \
     .config("spark.blockManager.port", 7078) \
     .getOrCreate()
 
-spark_df = spark.createDataFrame(predictions, schema=['clientID', 'month', 'predictedRevenue'])
+spark_df = spark.createDataFrame(predictions, schema=['clientID', 'year', 'month', 'predictedRevenue'])
+# Create a date column
+spark_df = spark_df.withColumn(
+    'month'
+    ,to_date(
+        concat(
+            col("year"),
+            lit("-"),
+            lpad(col("month"), 2, "0"),
+            lit("-01")
+        )
+    )
+)
 
 # We create a table if it doesn't exist yet and then overwrite it. If we try to use only createOrReplace without creating this table earlier, 
 # it gives an error that it can't find the metadata/version-hint.text file even though it does exist. Probably it is about some delay, the file
 # exists but Spark still for some time can't see it.
 
-# Create the Iceberg table if it doesn't exist yet
-spark_thrift.run_query("""
+# Drop the Iceberg table if it already exists and recreate it
+spark_thrift.run_query("DROP TABLE IF EXISTS dwh_fact.client_total_revenue_predictions")
+
+spark_thrift.run_query(
+"""
 CREATE TABLE IF NOT EXISTS dwh_fact.client_total_revenue_predictions (
     clientID INT
     ,month date
-    ,predictedRevenue int
+    ,predictedRevenue float
 )
 USING ICEBERG
 """)
 
 # Add records to the Iceberg table (overwrite the existing table). 
-spark_df.writeTo("dwh_fact.client_total_revenue_predictions").overwritePartitions()
+spark_df.select('clientID', 'month', 'predictedRevenue').writeTo("dwh_fact.client_total_revenue_predictions").overwritePartitions()

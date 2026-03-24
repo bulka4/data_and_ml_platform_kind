@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: python
+    description: Tables created by Python scripts
+    schema: dwh_fact
+    tables:
+      - name: clients_total_revenue_predictions
+        description: Revenue predictions for clients created by the make_predictions Airflow DAG
+        columns:
+          - name: clientID
+            description: Client for which we make predictions
+          - name: month
+            description: Month for which we make predictions
+          - name: predictedRevenue
+            description: Predicted revenue
+          - name: modelURI
+            description: MLflow registry URI of the model used to make predictions
