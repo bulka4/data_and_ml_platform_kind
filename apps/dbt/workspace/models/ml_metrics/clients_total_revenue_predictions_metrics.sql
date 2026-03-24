@@ -6,7 +6,7 @@
     -- in the clients_total_revenue table.
     -- Thanks to that, the oldMonth column from the "month" CTE is equal to this month and the condition 
     -- "rev.month > (select oldMonth from month)" includes only the latest month.
-    pre-hook="""
+    ,pre-hook="""
         CREATE TABLE IF NOT EXISTS dwh_fact.clients_total_revenue_predictions_metrics AS
         SELECT
             add_months(max(month), -1) as month
