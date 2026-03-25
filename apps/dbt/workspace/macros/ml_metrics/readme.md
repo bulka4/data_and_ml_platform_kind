@@ -1,1 +1,0 @@
-Macros related to the 'dwh_ml_metrics' schema, i.e. tables from the 'ml_metrics' folder.

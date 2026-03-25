@@ -1,5 +1,5 @@
 -- Set table name to "products"
-{{ config(alias='products') }}
+{{ config(alias='products', tags=['source1', 'source2']) }}
 
 with all_products as (
     select

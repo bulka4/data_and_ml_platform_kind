@@ -6,7 +6,8 @@
 -- "rev.month > (select oldMonth from month)" includes only the latest month.
 {{ config(
     alias="clients_total_revenue_predictions_metrics"
-    ,pre-hook="{{ create_ml_metrics_clients_total_revenue_predictions_metrics() }}"
+    ,materialized="incremental"
+    ,tags=['ml_metrics']
 ) }}
 
 -- Take the latest months from the current target table (with metrics) and source table (with predictions)
@@ -15,15 +16,22 @@ with month as (
         t.oldMonth
         ,s.newMonth
     from
-        (select max(month) as oldMonth from {{ this }}) as t
+        -- If this target table which we are creating already exists, then select the latest month from it. Otherwise, select the second latest date
+        -- from the fact_clients_total_revenue_predictions.
+        {% if is_incremental() %}
+            (select max(month) as oldMonth from {{ this }}) as t
+        {% else %}
+            (select add_months(max(month), -1) as oldMonth from {{ ref('fact_clients_total_revenue_predictions') }}) as t
+        {% endif %}
         cross join (select max(month) as newMonth from {{ ref('fact_clients_total_revenue_predictions') }}) as s
 )
 
 -- Get URI of the latest model used
 ,latest_model_uri as (
-    select top(1) modelURI
+    select modelURI
     from {{ ref('fact_clients_total_revenue_predictions') }}
     order by month desc
+    limit 1
 )
 
 -- Get predictions data for the last 3 months. If model used for some of those months was different than the latest model, then ignore those months
@@ -51,7 +59,7 @@ with month as (
         max(rev.month) as month
         ,sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_1
     from
-        {{ ref('dwh_fact', 'clients_total_revenue') }} as rev
+        {{ ref('fact_clients_total_revenue') }} as rev
 
         left join {{ ref('fact_clients_total_revenue_predictions') }} as pred
             on pred.clientID = rev.clientID
@@ -66,7 +74,7 @@ with month as (
         max(rev.month) as month
         ,sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_2
     from
-        {{ ref('dwh_fact', 'clients_total_revenue') }} as rev
+        {{ ref('fact_clients_total_revenue') }} as rev
 
         left join predictions as pred
             on pred.clientID = rev.clientID
@@ -81,7 +89,7 @@ with month as (
         max(rev.month) as month
         ,sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_3
     from
-        {{ ref('dwh_fact', 'clients_total_revenue') }} as rev
+        {{ ref('fact_clients_total_revenue') }} as rev
 
         left join predictions as pred
             on pred.clientID = rev.clientID
@@ -96,7 +104,7 @@ with month as (
         max(rev.month) as month
         ,max(abs(rev.revenue - pred.predictedRevenue)) as maxErrorLastMonth
     from
-        {{ ref('dwh_fact', 'clients_total_revenue') }} as rev
+        {{ ref('fact_clients_total_revenue') }} as rev
 
         left join {{ ref('fact_clients_total_revenue_predictions') }} as pred
             on pred.clientID = rev.clientID
@@ -111,7 +119,7 @@ select
     ,RMSE_2
     ,RMSE_3
     ,maxErrorLastMonth
-    ,model_uri.modelURI
+    ,latest_model_uri.modelURI
 from
     month
     -- Use the inner join, so in case there is no data in rmse_1 and other tables, result of this select statement is empty (so we don't add
@@ -120,4 +128,4 @@ from
     join rmse_2 on month.newMonth = rmse_2.month
     join rmse_3 on month.newMonth = rmse_3.month
     join max_error on month.newMonth = max_error.month
-    cross join model_uri
+    cross join latest_model_uri

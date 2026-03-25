@@ -1,5 +1,5 @@
 -- Set table name to "clients"
-{{ config(alias='clients') }}
+{{ config(alias='clients', tags=['source1', 'source2']) }}
 
 with all_clients as (
     select
