@@ -1,5 +1,5 @@
 -- Set table name to "products"
-{{ config(alias='products') }}
+{{ config(alias='products', tags=['source2']) }}
 
 select
     1 as productID

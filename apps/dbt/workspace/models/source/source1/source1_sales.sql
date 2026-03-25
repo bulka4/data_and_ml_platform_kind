@@ -1,5 +1,5 @@
 -- Set table name to "sales"
-{{ config(alias='sales') }}
+{{ config(alias='sales', tags=['source1']) }}
 
 select
     1 as clientID
