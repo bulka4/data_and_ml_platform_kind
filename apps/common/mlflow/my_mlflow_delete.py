@@ -89,8 +89,8 @@ class MyMLflowDelete():
                 # Delete info about logged models (so they don't appear in results of the search_logged_models function)
                 self.delete_logged_models_metadata([m.model_id for m in models])
 
-            # Delete info about model versions from the registry
-            self.delete_registry_models_metadata([m.model_uri for m in models])
+                # Delete info about model versions from the registry
+                self.delete_registry_models_metadata([m.model_uri for m in models])
 
         # Return paths where models and artifacts are saved, so we can delete them manually if we want.
         return [model.artifact_location for model in models] + [run.info.artifact_uri]
@@ -156,11 +156,11 @@ class MyMLflowDelete():
                 # Delete info about logged models (so they don't appear in results of the search_logged_models function)
                 self.delete_logged_models_metadata([m.model_id for m in models])
 
+                # Delete info about model versions from the registry
+                self.delete_registry_models_metadata([m.model_uri for m in models])
+
             # Delete info about the experiment itself (so we can create a new experiment with the same name as the deleted one)
             self.postgresql.run_query(f"DELETE FROM experiments WHERE experiment_id={experiment.experiment_id};")
-
-            # Delete info about model versions from the registry
-            self.delete_registry_models_metadata([m.model_uri for m in models])
 
         # Return paths where models and artifacts are saved, so we can delete them manually if we want
         return np.concatenate(([model.artifact_location for model in models], runs['artifact_uri'].values))

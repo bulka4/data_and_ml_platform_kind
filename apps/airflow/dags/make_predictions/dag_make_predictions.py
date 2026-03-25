@@ -37,7 +37,7 @@ resourceName = 'pyspark-app'
 imagePullPolicy = 'IfNotPresent'
 # path of the Spark script to run. This is the path to the Spark script relative to the "apps" folder from this repo (because we mount
 # the 'apps' folder from the host into the Spark driver and executor pods in the spark-application.yaml).
-mainApplicationFile = 'test/make_predictions_spark_operator.py'
+mainApplicationFile = 'airflow/dags/make_predictions/make_predictions_spark_operator.py'
 # URL of the Spark image to run
 image = 'mlflow-spark'
 # URI of the MLflow tracking server to use of the format: http://<mlflow-server-service>.<namespace>.svc:5000, where:

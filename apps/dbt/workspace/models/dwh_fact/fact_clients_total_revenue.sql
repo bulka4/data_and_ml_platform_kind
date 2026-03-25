@@ -3,7 +3,7 @@
 
 select
     clientID
-    ,concat(date_format(date, 'yyyy-MM'), '-01') as month
+    ,cast(concat(date_format(date, 'yyyy-MM'), '-01') as date) as month
     ,sum(totalPrice) as revenue
 from
     {{ ref('fact_sales') }}

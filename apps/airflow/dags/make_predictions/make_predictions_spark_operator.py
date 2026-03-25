@@ -17,7 +17,7 @@ in the spark-defaults.conf file or in the SparkApplication CRD when using Spark 
 import os, sys, pathlib
 
 # Add "apps" folder to the sys.path so we can import from "apps/common"
-sys.path.append(str(pathlib.Path(__file__).parent.parent.resolve()))
+sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.parent.resolve()))
 
 from common.spark_thrift_class import SparkThrift
 from common.spark import create_session, prepare_iceberg_configs
@@ -52,13 +52,26 @@ model_info = mlflow.MlflowClient().get_latest_versions(
 )[0]
 model_uri = f'models:/{model_name}/{model_info.version}'
 
+# Create the table where we will save predictions if it doesn't exist yet
+spark_thrift.run_query(
+    """
+    CREATE TABLE IF NOT EXISTS dwh_fact.clients_total_revenue_predictions (
+        clientID int
+        ,month date
+        ,predictedRevenue float
+        ,modelURI string
+    )
+    USING ICEBERG
+    """
+)
+
 # Load data about clients and months for which we will make predictions (load only those recprds for which we didn't make predictions yet)
 clients = spark_thrift.read_query(
     """
     SELECT
         rev.clientID
-        ,add_months(month, 1) as nextMonth  -- next month for which predictions will be made
-        ,revenue as revenueLastMonth        -- last month revenue based on which we make predictions
+        ,add_months(rev.month, 1) as nextMonth  -- next month for which predictions will be made
+        ,rev.revenue as revenueLastMonth        -- last month revenue based on which we make predictions
     FROM
         dwh_fact.clients_total_revenue AS rev
 
@@ -66,7 +79,7 @@ clients = spark_thrift.read_query(
             ON pred.clientID = rev.clientID
             AND pred.month = add_months(rev.month, 1)
     WHERE
-        pred.clientID IS NULLL
+        pred.clientID IS NULL
     """
 )
 
@@ -93,7 +106,7 @@ spark = create_session(app_name="write_iceberg", configs=spark_configs)
 
 spark_df = spark.createDataFrame(predictions, schema=['clientID', 'month', 'predictedRevenue'])
 # Create a date and model_uri columns
-spark_df = spark_df.withColumn('modelURI', model_uri)
+spark_df = spark_df.withColumn('modelURI', lit(model_uri))
 
 # Add records to the Iceberg table. 
 spark_df.writeTo("dwh_fact.clients_total_revenue_predictions").append()
