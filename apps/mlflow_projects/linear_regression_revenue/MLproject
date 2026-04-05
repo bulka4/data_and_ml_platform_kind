@@ -1,9 +1,16 @@
+# More info about parameters is in the entrypoint script where they are used.
+
 name: mlflow-test
 
 entry_points:
   # Training a model
   train:
     parameters:
+      # dates are of the format "yyyy-mm-dd"
+      start_date:
+        type: string
+      end_date:
+        type: string
       fit_intercept:
         type: bool
         default: True
@@ -12,7 +19,7 @@ entry_points:
         default: True
       model_name:
         type: string
-    command: "python3 train.py --fit_intercept {fit_intercept} --positive {positive} --model_name {model_name}"
+    command: "python3 train.py --start_date {start_date} --end_date {end_date} --fit_intercept {fit_intercept} --positive {positive} --model_name {model_name}"
 
   # Evaluating the latest created model from the experiment where we run this entrypoint
   eval_latest:
@@ -20,4 +27,10 @@ entry_points:
 
   # Evaluating all created models from the experiment where we run this entrypoint
   eval_all:
-    command: "python3 evaluate_all.py"
+    parameters:
+      # dates are of the format "yyyy-mm-dd"
+      start_date:
+        type: string
+      end_date:
+        type: string
+    command: "python3 evaluate_all.py --start_date {start_date} --end_date {end_date}"

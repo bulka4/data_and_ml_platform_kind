@@ -1,4 +1,4 @@
-# Image for using MLflow and Spark (in MLflow projects, Airflow DAGs):
+# Image for using MLflow and connecting to the Spark Thrift Server (in MLflow projects, Airflow DAGs):
 #   - Loading and saving models
 #   - Loading data for training and saving model predictions using Spark
 

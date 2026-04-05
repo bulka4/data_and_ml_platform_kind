@@ -31,7 +31,11 @@ class SparkThrift:
         cursor.execute(query)
 
     
-    def read_query(self, query):
+    def read_query(self, query, date_columns: list[str] = None):
+        """
+        The date_columns argument is a list of column names which we want to convert into the datetime type. Otherwise, they will be of the
+        'object' type.
+        """
         # Create a cursor
         cursor = self.conn.cursor()
 
@@ -46,6 +50,11 @@ class SparkThrift:
 
         # Convert to DataFrame
         df = pd.DataFrame(rows, columns=columns)
+
+        # Convert date columns
+        if date_columns != None:
+            for col in date_columns:
+                df[col] = pd.to_datetime(df[col])
 
         return df
     

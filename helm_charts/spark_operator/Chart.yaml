@@ -1,6 +1,9 @@
 apiVersion: v2
 name: spark-application
-description: Running SparkApplication CRD which uses Spark Operator (Spark Operator needs to be installed separately to run this chart)
+description: |
+  Running SparkApplication CRD which uses Spark Operator (Spark Operator needs to be installed separately to run this chart)
+  This chart doesn't provide Spark configuration (it is problematic to make this configuration dynamic, i.e. to take config vlaues e.g.
+  from env vars). We need to provide that configuration in the Python Spark script.
 type: application
 version: 0.1.0
 appVersion: "3.1.3"

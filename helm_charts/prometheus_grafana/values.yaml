@@ -1,0 +1,13 @@
+kube-prometheus-stack:
+  grafana:
+    # Change Grafana's service to a NodePort, so we can access it from the localhost. We also need to map the nodePort
+    # to the host port in the kind-config.yaml file.
+    # So traffic will go like that: 
+    #   - host port (port on the host specified in the kind-config.yaml) -> 
+    #   - container port / node port (port in the kind node container, specified in the kind-config.yaml as containerPort and here as nodePort) ->
+    #   - target port (port in the container running in the kind cluster, specified here)
+    service:
+      type: NodePort
+      port: 80        # service port inside cluster
+      targetPort: 3000  # container port
+      nodePort: 30000   # host port you want to expose

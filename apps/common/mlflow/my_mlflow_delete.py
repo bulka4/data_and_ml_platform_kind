@@ -166,6 +166,23 @@ class MyMLflowDelete():
         return np.concatenate(([model.artifact_location for model in models], runs['artifact_uri'].values))
     
 
+    def delete_registered_model(
+        self
+        ,model_name: str            # Name of the model to delete
+        ,model_version: str         # Version of the model to delete
+        ,hard_delete: bool = False  # Whether or not to perform a hard delete (delete info about the registered model from the metadata db)
+    ):
+        # Soft delete
+        self.client.delete_model_version(
+            name=model_name,
+            version=model_version
+        )
+
+        # Hard delete - delete info from the metadata db
+        if hard_delete:
+            self.delete_registry_models_metadata(model_names_versions=[f'{model_name}:{model_version}'])
+
+
     def delete_runs_metadata(
         self
         ,run_ids: list[str]
@@ -205,15 +222,34 @@ class MyMLflowDelete():
 
     def delete_registry_models_metadata(
         self
-        ,model_uris: list[str]
+        ,model_uris: list[str] = None
+        ,model_names_versions: list[str] = None
     ):
         """
-        This function deletes from the metadata db info about models and their versions saved in the registry based on provided model URIs.
+        This function deletes from the metadata db info about models and their versions saved in the registry based on one of the below:
+            - Model URIs
+            - Model names and versions (this is a list of the format: ['model_name_1:version_1', 'model_name_2:version_2', ...])
         """
-        model_uris = ', '.join([f"'{uri}'" for uri in model_uris])
+        # Construct the 'where' clause for the SQL query to identify model versions to delete. It has one of two possible formats:
+        #   - where_clause = "where source in (model_uri_1, model_uri_2, ...)"
+        #   - where_clause = "where (name = model_name_1 and version = model_version_1) or (name = model_name_2 and version = model_version_2) or ..."
+        if model_uris is not None:
+            model_uris = ', '.join([f"'{uri}'" for uri in model_uris])
+            where_clause = f'where source in ({model_uris})'
+        elif model_names_versions is not None:
+            where_clause = ''
+            for model_name_version in model_names_versions:
+                model_name = model_name_version.split(':')[0]
+                model_version = model_name_version.split(':')[1]
+                if where_clause == '':
+                    where_clause = f"where (name = '{model_name}' and version = '{model_version}')"
+                else:
+                    where_clause += f" or (name = '{model_name}' and version = '{model_version}')"
+        else:
+            raise Exception("You need to provide either the model_uris or model_names_versions argument.")
 
         # Delete info about model versions
-        self.postgresql.run_query(f"DELETE FROM model_versions WHERE source in ({model_uris})")
+        self.postgresql.run_query(f"DELETE FROM model_versions {where_clause}")
 
         # Delete info about those registered models, for which all the versions has been deleted
         self.postgresql.run_query(
@@ -232,4 +268,5 @@ class MyMLflowDelete():
                     WHERE
                         mv.name IS NULL
                 )
-        """)
+            """
+        )

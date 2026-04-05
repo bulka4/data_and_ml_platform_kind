@@ -7,7 +7,11 @@ import yaml
 from airflow.providers.cncf.kubernetes.pod_generator import PodGenerator
 
 class Jinja:
-    def load_yaml(self, yaml_file_path, params):
+    def load_yaml(
+        self
+        ,yaml_file_path: str
+        ,params: dict = None
+    ):
         # Render the template YAML file. 
         # Arguments:
         # - params- Parameters with values to insert into the template. For example, if params={git: {branch: "branch_name"}},
@@ -16,8 +20,11 @@ class Jinja:
         with open(yaml_file_path) as f:
             template = Template(f.read())
 
-        rendered = template.render(params=params)
-
+        if params is not None:
+            rendered = template.render(params=params)
+        else:
+            rendered = template.render()
+            
         return yaml.safe_load(rendered)
 
 

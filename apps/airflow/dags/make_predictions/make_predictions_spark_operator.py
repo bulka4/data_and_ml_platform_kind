@@ -67,7 +67,7 @@ spark_thrift.run_query(
 
 # Load data about clients and months for which we will make predictions (load only those recprds for which we didn't make predictions yet)
 clients = spark_thrift.read_query(
-    """
+    query="""
     SELECT
         rev.clientID
         ,add_months(rev.month, 1) as nextMonth  -- next month for which predictions will be made
@@ -81,7 +81,10 @@ clients = spark_thrift.read_query(
     WHERE
         pred.clientID IS NULL
     """
+    ,date_columns=['nextMonth'] # columns to convert into the datetime type
 )
+
+print(clients.dtypes)
 
 # Make predictions with the model
 predictions = model.predict(clients[['clientID', 'revenueLastMonth']])
@@ -91,9 +94,11 @@ predictions = model.predict(clients[['clientID', 'revenueLastMonth']])
 #   - clientID - Input for a model
 #   - nextMonth - Month for which we made predictions
 #   - predictedRevenueNextMonth - Predicted revenue for the next month
-predictions = np.array(predictions).reshape(len(predictions), 1)
-predictions = np.concatenate((clients[['clientID', 'nextMonth']].values, predictions), axis = 1)
+# predictions = np.array(predictions).reshape(len(predictions), 1)
+# predictions = np.concatenate((clients[['clientID', 'nextMonth']].values, predictions), axis = 1)
 
+# Add a column with predictions
+clients['predictedRevenue'] = predictions
 
 # Prepare configs needed to work with Spark and Iceberg. The prepare_iceberg_configs function requires to prepare the following environment variables first:
 #   - STORAGE_ACCOUNT, CONTAINER - Name of the Azure Storage Account and container used as an Iceberg catalog (data warehouse)
@@ -104,7 +109,14 @@ spark_configs = prepare_iceberg_configs()
 # Create SparkSession using configs prepared previously. It will be used to save data in Iceberg catalog.
 spark = create_session(app_name="write_iceberg", configs=spark_configs)
 
-spark_df = spark.createDataFrame(predictions, schema=['clientID', 'month', 'predictedRevenue'])
+spark_df = spark.createDataFrame(
+    clients[['clientID', 'nextMonth', 'predictedRevenue']]
+    ,schema=['clientID', 'month', 'predictedRevenue']
+)
+
+print(clients)
+spark_df.show()
+
 # Create a date and model_uri columns
 spark_df = spark_df.withColumn('modelURI', lit(model_uri))
 

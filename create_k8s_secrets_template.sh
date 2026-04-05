@@ -15,7 +15,7 @@ POSTGRES_DNS=airflow-postgres   # DNS name of PostgreSQL (name of the kubernetes
 	# - docker-username: Service Principal client ID
 	# - docker-password: Service Principal client secret
 	# - docker-email: It doesn't matter what we put here but it is needed
-for ns in "airflow" "spark" "mlflow" "git-sync"; do
+for ns in "airflow" "spark" "mlflow" "git-sync" "prometheus"; do
 	kubectl create namespace $ns
 	
 	# if [ "$ns" != "git-sync"  ]; then

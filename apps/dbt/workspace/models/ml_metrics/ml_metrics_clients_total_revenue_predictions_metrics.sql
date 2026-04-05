@@ -1,33 +1,22 @@
-/*This code adds to the target table one record with metrics calculated for the latest month from the source table clients_total_revenue.*/
+/*
+This model adds to the target table one record with metrics calculated for the latest month from the source table clients_total_revenue. It needs to be ran 
+every month in order to have metrics calculated for every month. Otherwise, previous months will be skipped.
 
--- If the target table doesn't exist yet, use pre-hook to create a dummy record with a proper date which is a month earlier than the latest month
--- in the clients_total_revenue table.
--- Thanks to that, the oldMonth column from the "month" CTE is equal to this month and the condition 
--- "rev.month > (select oldMonth from month)" includes only the latest month.
+It uses predictions made only by the latest model. For example, if two and three months ago a different model was used, then metrics for those months will
+be NULL.
+
+Also, this model needs to be ran after making predictions, so we have data about them (if it runs before making predictions, it will not
+add any records, so nothing wrong will happen).
+*/
+
 {{ config(
     alias="clients_total_revenue_predictions_metrics"
     ,materialized="incremental"
     ,tags=['ml_metrics']
 ) }}
 
--- Take the latest months from the current target table (with metrics) and source table (with predictions)
-with month as (
-    select
-        t.oldMonth
-        ,s.newMonth
-    from
-        -- If this target table which we are creating already exists, then select the latest month from it. Otherwise, select the second latest date
-        -- from the fact_clients_total_revenue_predictions.
-        {% if is_incremental() %}
-            (select max(month) as oldMonth from {{ this }}) as t
-        {% else %}
-            (select add_months(max(month), -1) as oldMonth from {{ ref('fact_clients_total_revenue_predictions') }}) as t
-        {% endif %}
-        cross join (select max(month) as newMonth from {{ ref('fact_clients_total_revenue_predictions') }}) as s
-)
-
 -- Get URI of the latest model used
-,latest_model_uri as (
+with latest_model_uri as (
     select modelURI
     from {{ ref('fact_clients_total_revenue_predictions') }}
     order by month desc
@@ -50,13 +39,13 @@ with month as (
 
         cross join latest_model_uri
     where
-        month > (select date_add(max(month), -3) from {{ ref('fact_clients_total_revenue_predictions') }})
+        month > (select add_months(max(month), -3) from {{ ref('fact_clients_total_revenue_predictions') }})
 )
 
 -- RMSE for the last 1 month (those predictions were made using the latest model so we don't need to use the 'predictions' CTE)
 ,rmse_1 as (
     select
-        max(rev.month) as month
+        max(rev.month) as month -- Month for which the metrics are calculated
         ,sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_1
     from
         {{ ref('fact_clients_total_revenue') }} as rev
@@ -65,14 +54,13 @@ with month as (
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
-        rev.month > (select oldMonth from month)
+        rev.month >= (select max(month) from {{ ref('fact_clients_total_revenue') }})
 )
 
 -- RMSE for the last 2 months
 ,rmse_2 as (
     select
-        max(rev.month) as month
-        ,sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_2
+        sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_2
     from
         {{ ref('fact_clients_total_revenue') }} as rev
 
@@ -80,14 +68,13 @@ with month as (
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
-        rev.month > add_months((select oldMonth from month), -1)
+        rev.month >= (select add_months(max(month), -1) from {{ ref('fact_clients_total_revenue') }})
 )
 
 -- RMSE for the last 3 months
 ,rmse_3 as (
     select
-        max(rev.month) as month
-        ,sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_3
+        sqrt(avg(power(rev.revenue - pred.predictedRevenue, 2))) as RMSE_3
     from
         {{ ref('fact_clients_total_revenue') }} as rev
 
@@ -95,14 +82,13 @@ with month as (
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
-        rev.month > add_months((select oldMonth from month), -2)
+        rev.month >= (select add_months(max(month), -2) from {{ ref('fact_clients_total_revenue') }})
 )
 
 -- max error for the last month
 ,max_error as (
     select
-        max(rev.month) as month
-        ,max(abs(rev.revenue - pred.predictedRevenue)) as maxErrorLastMonth
+        max(abs(rev.revenue - pred.predictedRevenue)) as maxErrorLastMonth
     from
         {{ ref('fact_clients_total_revenue') }} as rev
 
@@ -110,22 +96,23 @@ with month as (
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
-        rev.month > (select oldMonth from month)
+        rev.month >= (select max(month) from {{ ref('fact_clients_total_revenue') }})
 )
 
 select
-    month.newMonth as month
+    rmse_1.month
     ,RMSE_1
     ,RMSE_2
     ,RMSE_3
     ,maxErrorLastMonth
     ,latest_model_uri.modelURI
 from
-    month
-    -- Use the inner join, so in case there is no data in rmse_1 and other tables, result of this select statement is empty (so we don't add
-    -- rows to the target table)
-    join rmse_1 on month.newMonth = rmse_1.month
-    join rmse_2 on month.newMonth = rmse_2.month
-    join rmse_3 on month.newMonth = rmse_3.month
-    join max_error on month.newMonth = max_error.month
+    rmse_1
+    cross join rmse_2
+    cross join rmse_3
+    cross join max_error
     cross join latest_model_uri
+-- If there is no metric for the last month, there will be also no metrics for the previous months, so there are no metrics to be added (don't
+-- add a record to the target table with only NULLs)
+where
+    RMSE_1 is not null

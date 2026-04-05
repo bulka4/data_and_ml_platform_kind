@@ -71,8 +71,10 @@ spec:
     volumes:
       # PV with code to develop
       - name: code
-        persistentVolumeClaim:
-          claimName: code-pvc
+        hostPath:
+          path: {{ .Values.hostPath }}
+        # persistentVolumeClaim:
+        #   claimName: code-pvc
       # ConfigMap with Spark config template to be interpolated in the init container. It is the same config as the one used for the Spark Thrift Server.
       #  Prepared config files will be used to save data using Spark.
       - name: spark-conf-template

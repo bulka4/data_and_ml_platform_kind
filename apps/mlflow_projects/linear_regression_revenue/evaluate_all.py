@@ -1,5 +1,13 @@
 """
 This script evaluates all the models from the current experiment (in which this script runs). Each evaluation is a separate run.
+
+It saves tags:
+    - evaluated_model_uri - URI of the evaluated model
+    - evaluated_model_source_run_id - ID of the run where the evaluated model has been created
+
+and metrics:
+    - mse
+    - r2
 """
 
 import numpy as np
@@ -13,18 +21,65 @@ import os, sys, pathlib
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.resolve()))
 
 from common.mlflow.my_mlflow import MyMLflow
+from common.spark_thrift_class import SparkThrift
 
 
 my_mlflow = MyMLflow()
 
 
 # -----------------------------
-# Load test data (example)
+# Parse arguments
 # -----------------------------
-np.random.seed(123)
-# Prepare X_test (20, 2) and y_text of shape (20, 1)
-X_test = np.random.rand(20, 2) * 10
-y_test = np.random.randn(20) * 2
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--start_date"
+    ,type=str
+    ,help="We select data for evaluation for the timeframe between the start_date and end_date perameters."
+)
+parser.add_argument(
+    "--end_date"
+    ,type=str
+    ,help="We select data for evaluation for the timeframe between the start_date and end_date perameters."
+)
+args = parser.parse_args()
+
+
+# -----------------------------
+# Get environment variables values
+# -----------------------------
+# DNS name of the Spark Thrift Server to connect to (to get data from it for training models).
+spark_host = os.getenv('SPARK_THRIFT_SERVER_DNS')
+
+
+# -----------------------------
+# Load test data
+# -----------------------------
+spark = SparkThrift(
+    host=spark_host,   # DNS name of the Spark Thrift Server of the format: "<service-name>.<namespace>.svc.cluster.local"
+    port=10000, 
+    auth='NONE' # No authentication. Other options include 'LDAP', 'KERBEROS', etc.
+)
+
+# Take data for evaluation from a specific timeframe
+query = f"""
+SELECT
+    next.clientID
+    ,previous.revenue as revenueLastMonth
+    ,next.revenue
+FROM
+    dwh_fact.clients_total_revenue as previous
+
+    join dwh_fact.clients_total_revenue as next
+        on next.clientID = previous.clientID
+        and next.month = add_months(previous.month, 1)
+WHERE
+    next.month >= '{args.start_date}'
+    and next.month <= '{args.end_date}'
+"""
+
+df = spark.read_query(query)
+x = df[['clientID', 'revenueLastMonth']]
+y = df['revenue']
 
 
 # ============== Load all the models from the experiment =================
@@ -50,9 +105,9 @@ for model_info in models_info:
     # -----------------------------
     # Evaluate the model
     # -----------------------------
-    y_pred = model.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+    y_pred = model.predict(x)
+    mse = mean_squared_error(y, y_pred)
+    r2 = r2_score(y, y_pred)
 
     with mlflow.start_run() as run:
         mlflow.log_metric("mse", mse)

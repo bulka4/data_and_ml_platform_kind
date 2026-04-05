@@ -2,7 +2,17 @@ version: 2
 
 models:
   - name: ml_metrics_clients_total_revenue_predictions_metrics
-    description: "This table contains metrics about ML model predictions about client monthly revenue."
+    description: |
+      Table prepared by this model contains metrics about ML model predictions about client monthly revenue.
+
+      This model adds to the target table one record with metrics calculated for the latest month from the source table clients_total_revenue. It needs to be ran 
+      every month in order to have metrics calculated for every month. Otherwise, previous months will be skipped.
+
+      It uses predictions made only by the latest model. For example, if two and three months ago a different model was used, then metrics for those months will
+      be NULL.
+
+      Also, this model needs to be ran after making predictions, so we have data about them (if it runs before making predictions, it will not
+      add any records, so nothing wrong will happen).
     columns:
       - name: month
         description: "Month for which metrics were calculated (using predictions and real values for this month)"

@@ -4,6 +4,7 @@ This is a class for getting information from the MLflow metadata database.
 
 import mlflow
 from mlflow.tracking import MlflowClient
+import datetime
 
 
 class MyMLflowGet():
@@ -42,8 +43,9 @@ class MyMLflowGet():
         """
         Get URI of the model with the best evaluation metrics. In order to use this function, the following assumptions must be met:
             - We have been evaluating a single model in a single MLflow run
-            - Each run was logging evaluation metrics
-            - Each run got assigned tag "evaluated_model_uri" indicating which model has been evaluated 
+            - Given experiment contains runs which were logging evaluation metrics specified in the 'metrics' argument
+            - Each run got assigned tag "evaluated_model_uri" or "created_model_uri" indicating which model has been evaluated
+                ('evaluated_model_uri' tag is for runs which only evaluates a model, 'created_model_uri' tag is for runs which trains and evaluates)
         
         Arguments:
             - metrics - a dictionary specifying names of metrics and whether we want to get a run with the highest or lowest values of those metrics.
@@ -76,11 +78,16 @@ class MyMLflowGet():
         if runs_data.empty:
             raise ValueError("No runs found in experiment")
 
-        if 'tags.evaluated_model_uri' not in runs_data.columns:
-            raise Exception("There is no 'evaluated_model_uri' in runs tags.")
+        if 'tags.evaluated_model_uri' not in runs_data.columns and 'tags.created_model_uri' not in runs_data.columns:
+            raise Exception("There is no 'evaluated_model_uri' nor 'created_model_uri' in runs tags.")
 
         # Get URI of the model which has been evaluated from evaluation run tags
-        model_uri = runs_data.loc[0, 'tags.evaluated_model_uri']
+        if runs_data.loc[0, 'tags.evaluated_model_uri'] is not None:
+            model_uri = runs_data.iloc[0]['tags.evaluated_model_uri']
+        elif runs_data.loc[0, 'tags.created_model_uri'] is not None:
+            model_uri = runs_data.iloc[0]['tags.created_model_uri']
+        else:
+            raise Exception(f"There is no value for 'evaluated_model_uri' nor 'created_model_uri' tags in the run with the best metrics, with ID = {runs_data.iloc[0]['run_id']}.")
 
         return model_uri
 
@@ -130,6 +137,21 @@ class MyMLflowGet():
         )
 
         return runs['run_id'].values
+    
+
+    def get_runs_after_date(self, experiment_name:str, date: datetime.datetime):
+        "Get runs data after the specified date."
+        # convert to milliseconds
+        timestamp_ms = int(date.timestamp() * 1000)
+
+        experiment = mlflow.get_experiment_by_name(experiment_name)
+
+        runs = mlflow.search_runs(
+            experiment_ids=[experiment.experiment_id]
+            ,filter_string=f'start_time >= {timestamp_ms}'
+        )
+
+        return runs
 
 
     def get_registered_model_names(

@@ -1,0 +1,45 @@
+# Job running the MLflow project to evaluate all models from the given experiment. We mount here the 'apps' folder from the host which contains 
+# MLflow project files to run.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ params.job_name }}
+  namespace: {{ params.namespace }}
+spec:
+  backoffLimit: 2 # Retry the job 2 times in case of failure
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+              
+      containers:
+        - name: mlflow-trainer
+          image: {{ params.image }}
+          imagePullPolicy: {{ params.image_pull_policy }}
+          command: ["sh", "-c"]
+          # Use the env-manager = local parameter to run MLflow locally (in the pod where we run this command, there is everything prepared to run MLflow)
+          args:
+            - |
+              mlflow run /opt/spark/work-dir/apps/mlflow_projects/linear_regression_revenue \
+              -e {{ params.entrypoint }} \
+              --env-manager local \
+              --experiment-name={{ params.experiment_name }} \
+              -P start_date={{ params.start_date }} \
+              -P end_date={{ params.end_date }}
+          env:
+            # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+            - name: MLFLOW_TRACKING_URI
+              value: "{{ params.mlflow_tracking_uri }}"
+            # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
+            # from it for training models).
+            - name: SPARK_THRIFT_SERVER_DNS
+              value: {{ params.spark_thrift_server_dns }}
+          volumeMounts:
+            - name: project
+              mountPath: /opt/spark/work-dir/apps
+      volumes:
+        # Volume with MLflow project files. Use containerPath from kind-config.yaml as the hostPath.path.
+        - name: project
+          hostPath:
+            path: /apps   # path on the Kubernetes node with MLflow project files

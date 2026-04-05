@@ -1,0 +1,37 @@
+# Job running the script which moves the model with the best metrics to the 'Production' stage and previous model from the 'Production' stage moves 
+# to the 'Archived' stage. 
+# We mount here the 'apps' folder from the host which contains MLflow project files to run.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ params.job_name }}
+  namespace: {{ params.namespace }}
+spec:
+  backoffLimit: 2 # Retry the job 2 times in case of failure
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+              
+      containers:
+        - name: mlflow-trainer
+          image: {{ params.image }}
+          imagePullPolicy: {{ params.image_pull_policy }}
+          command: ["sh", "-c"]
+          # Run the script for promoting the best model to the 'Production' stage (script from the mounted folder from the host)
+          args:
+            - |
+              python3 /opt/spark/work-dir/apps/mlflow_projects/linear_regression_revenue/promote_model.py
+          env:
+            # Set up MLFLOW_TRACKING_URI env variable indicating URI of the Tracking Server to connect to.
+            - name: MLFLOW_TRACKING_URI
+              value: "{{ params.mlflow_tracking_uri }}"
+          volumeMounts:
+            - name: project
+              mountPath: /opt/spark/work-dir/apps
+      volumes:
+        # Volume with MLflow project files. Use containerPath from kind-config.yaml as the hostPath.path.
+        - name: project
+          hostPath:
+            path: /apps   # path on the Kubernetes node with MLflow project files

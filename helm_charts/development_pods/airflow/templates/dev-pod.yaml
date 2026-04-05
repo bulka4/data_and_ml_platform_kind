@@ -1,0 +1,27 @@
+# Pod running Airflow
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: airflow-dev
+  namespace: airflow
+spec:
+  # Use this service account so we can for example list pods
+  serviceAccountName: airflow-sa
+  containers:
+    - name: airflow
+      image: airflow:latest
+      imagePullPolicy: IfNotPresent
+      # Run as root user so we can access /root/apps
+      securityContext:
+        runAsUser: 0
+      command: ["/bin/bash", "-c", "sleep 3600"]
+      volumeMounts:
+        - name: code
+          mountPath: /root/apps
+  volumes:
+    # Volume with repo code. Use containerPath from kind-config.yaml as the hostPath.path.
+    - name: code
+      hostPath:
+        path: /apps
+  restartPolicy: Never

@@ -35,6 +35,7 @@ RUN apt-get update && \
 # Install tools needed to run the init_iceberg_schema.py script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.
 RUN pip install --no-cache-dir pyspark==3.5.0
 
+# User spark has uid=gid=185
 USER spark
 
 # Copy the init_iceberg_schema.py script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.

@@ -12,4 +12,5 @@ RUN pip install \
     apache-airflow-providers-fab==1.0.4 \
 	--constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.1/constraints-3.10.txt"
 
-# USER airflow
+# User airflow has uid=gid=50000
+USER airflow

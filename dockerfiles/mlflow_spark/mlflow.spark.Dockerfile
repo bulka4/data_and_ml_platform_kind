@@ -97,4 +97,7 @@ RUN pip install --no-cache-dir -r $SPARK_HOME/work-dir/requirements.txt
 # Copy the init_iceberg_schema.py script which prepares required 'default' schema in the Iceberg catalog. More info in comments in that script.
 COPY init_iceberg_schema.py $SPARK_HOME/work-dir/
 
+# User spark has uid=gid=185
 USER spark
+
+WORKDIR $SPARK_HOME/work-dir/

@@ -25,6 +25,7 @@ from kubernetes import client, config
 sys.path.append(str(pathlib.Path(__file__).parent.resolve()))
 
 from common.jinja import Jinja
+from common.SparkApplicationOperator import SparkApplicationOperator
 
 
 
@@ -86,46 +87,56 @@ with DAG(
 
     spark_app_manifest = jinja.load_yaml('/opt/airflow/dags/make_predictions/spark-application.yaml', params)
 
-
-    def submit_spark_app():
-        # create configs with credentials used for authentication when making Rest API calls to Kubernetes API
-        config.load_incluster_config()
-
-        # Create Kubernetes API client to make Rest API calls to Kubernetes
-        api = client.CustomObjectsApi()
-
-        # Create SparkApplication resource by making a Rest API call to Kubernetes
-        api.create_namespaced_custom_object(
-            group="sparkoperator.k8s.io",
-            version="v1beta2",
-            namespace=namespace,
-            plural="sparkapplications",
-            body=spark_app_manifest,
-        )
-        
-        # Wait until the submitted SparkApplication resource is either completed or failed (so when Airflow task is finished, 
-        # deploying SparkApplication resource is also finished).
-        while True:
-            resp = api.get_namespaced_custom_object(
-                group="sparkoperator.k8s.io",
-                version="v1beta2",
-                namespace=namespace,
-                plural="sparkapplications",
-                name=resourceName,
-            )
-
-            if "status" in resp and "applicationState" in resp["status"]:
-                state = resp["status"]["applicationState"]["state"]
-
-                if state == "COMPLETED":
-                    break
-                if state == "FAILED":
-                    raise Exception("Spark failed")
-
-            time.sleep(10)
-
-
-    submit = PythonOperator(
-        task_id="submit_spark",
-        python_callable=submit_spark_app,
+    task = SparkApplicationOperator(
+        task_id='submit_spark'
+        ,namespace=namespace
+        ,resource_name=resourceName
+        ,manifest=spark_app_manifest
+        ,delete_spark_application=True
     )
+
+
+    # Old code replaced by using the SparkApplicationOperator
+
+    # def submit_spark_app():
+    #     # create configs with credentials used for authentication when making Rest API calls to Kubernetes API
+    #     config.load_incluster_config()
+
+    #     # Create Kubernetes API client to make Rest API calls to Kubernetes
+    #     api = client.CustomObjectsApi()
+
+    #     # Create SparkApplication resource by making a Rest API call to Kubernetes
+    #     api.create_namespaced_custom_object(
+    #         group="sparkoperator.k8s.io",
+    #         version="v1beta2",
+    #         namespace=namespace,
+    #         plural="sparkapplications",
+    #         body=spark_app_manifest,
+    #     )
+        
+    #     # Wait until the submitted SparkApplication resource is either completed or failed (so when Airflow task is finished, 
+    #     # deploying SparkApplication resource is also finished. When SparkApplication fails, Airflow task also fails).
+    #     while True:
+    #         resp = api.get_namespaced_custom_object(
+    #             group="sparkoperator.k8s.io",
+    #             version="v1beta2",
+    #             namespace=namespace,
+    #             plural="sparkapplications",
+    #             name=resourceName,
+    #         )
+
+    #         if "status" in resp and "applicationState" in resp["status"]:
+    #             state = resp["status"]["applicationState"]["state"]
+
+    #             if state == "COMPLETED":
+    #                 break
+    #             if state == "FAILED":
+    #                 raise Exception("Spark failed")
+
+    #         time.sleep(10)
+
+
+    # submit = PythonOperator(
+    #     task_id="submit_spark",
+    #     python_callable=submit_spark_app,
+    # )

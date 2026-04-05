@@ -1,5 +1,5 @@
 """
-This is a script for reviewing MLflow data about experiments and runs.
+This is a script for reviewing MLflow data about experiments, runs, models.
 """
 
 import sys, pathlib
@@ -13,6 +13,7 @@ from common.postgresql import PostgreSQL
 import mlflow
 import pandas as pd
 import numpy as np
+import datetime
 
 
 my_mlflow = MyMLflow()
@@ -36,11 +37,20 @@ my_mlflow = MyMLflow()
 # =========== Get runs data ===========
 # experiment = mlflow.get_experiment_by_name('linear_regression_revenue')
 
+# dt = datetime.datetime(2026, 4, 1, 2, 30)
+# # convert to milliseconds
+# timestamp_ms = int(dt.timestamp() * 1000)
+
 # runs = mlflow.search_runs(
 #     experiment_ids=[experiment.experiment_id]
+#     ,filter_string=f'start_time >= {timestamp_ms}'
 # )
 # print('runs data:')
-# print(runs[["experiment_id", "run_id", "artifact_uri", "start_time", "tags.mlflow.runName", "tags.evaluated_model_uri"]])
+# # print(runs)
+# print(runs[[
+#     "experiment_id", "run_id", "start_time"#, "metrics.mse", "metrics.r2"
+#     #,"tags.evaluated_model_uri"#, "tags.created_model_uri"
+# ]])
 # print(runs.columns)
 
 
@@ -62,20 +72,25 @@ my_mlflow = MyMLflow()
 
 # ============ Get registered models =================
 
-# Check registered models
-# for rm in my_mlflow.client.search_registered_models():
-#     print(rm.name)
-
-# Check all the version of the model with the specified name
+# Check all the versions of the model with the specified name
 name = "linear_regression_revenue"
+
+print('Registered model versions:')
 for mv in my_mlflow.client.search_model_versions(f"name='{name}'"):
     print(
         mv.version,
         mv.current_stage,
         mv.status,
-        mv.run_id
+        mv.run_id,
+        mv.source
     )
-    # print(mv)
+    
+print('Registered models aliases:')
+for mv in my_mlflow.client.search_registered_models(f"name='{name}'"):
+    print(
+        mv.aliases
+    )
+    print(mv)
     # break
 
 

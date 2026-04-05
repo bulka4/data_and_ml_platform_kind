@@ -16,15 +16,16 @@ nodes:
       - containerPort: 6443
         hostPort: 6443
         protocol: TCP
-      # port for accessing services. We will use nodePort services (like webserver service specified in the helm_charts/airflow/values.yaml)
+      # ports for accessing services. We will use nodePort services (like webserver service specified in the helm_charts/airflow/values.yaml)
       # which maps containerPort 30080 to the port in containers using the service.
       - containerPort: 30080
         hostPort: 8080
         protocol: TCP
-      # port for accessing services. We will use nodePort services (like webserver service specified in the helm_charts/airflow/values.yaml)
-      # which maps containerPort 35000 to the port in containers using the service.
       - containerPort: 30050
         hostPort: 5000
+        protocol: TCP
+      - containerPort: 30000
+        hostPort: 3000
         protocol: TCP
     # Mount host folders into the node container so it can be mounted into pods
     extraMounts:

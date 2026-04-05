@@ -1,0 +1,38 @@
+# Job checking whether or not we need to retrain models using metrics saved in the Iceberg catalog. We mount here the 'apps' folder from the host which contains 
+# the script to run.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ params.job_name }}
+  namespace: {{ params.namespace }}
+spec:
+  backoffLimit: 2 # Retry the job 2 times in case of failure
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: mlflow-trainer
+          image: {{ params.image }}
+          imagePullPolicy: {{ params.image_pull_policy }}
+          command: ["python3"]
+          # Use the env-manager = local parameter to run MLflow locally (in the pod where we run this command, there is everything prepared to run MLflow)
+          args: ["/opt/spark/work-dir/apps/airflow/dags/update_model/check_whether_to_train.py"]              
+          env:
+            # When metric is lower than the METRIC_THRESHOLD threshold, then model requires a retraining
+            - name: METRIC_THRESHOLD
+              value: "{{ params.metric_threshold }}"
+            # Set up SPARK_THRIFT_SERVER_DNS env variable indicating DNS name of the Spark Thrift Server to connect to (to get data
+            # from it for training models).
+            - name: SPARK_THRIFT_SERVER_DNS
+              value: {{ params.spark_thrift_server_dns }}
+          volumeMounts:
+            - name: code
+              mountPath: /opt/spark/work-dir/apps
+      volumes:
+        # Volume with repo code. Use containerPath from kind-config.yaml as the hostPath.path.
+        - name: code
+          hostPath:
+            path: /apps

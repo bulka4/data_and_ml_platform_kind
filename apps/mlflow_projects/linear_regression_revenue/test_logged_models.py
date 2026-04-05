@@ -1,5 +1,5 @@
 """
-This is a script for testing code.
+This is a script for testing MLflow code related to logged experiment models.
 """
 
 import sys, pathlib
@@ -26,16 +26,17 @@ postgresql = PostgreSQL(
 )
 
 
-experiment = mlflow.get_experiment_by_name('linear_regression_revenue')
-models = my_mlflow.client.search_logged_models(
-    experiment_ids=[experiment.experiment_id]
-    ,order_by=[
-        {"field_name": "creation_timestamp", "ascending": False}  # Highest accuracy first
-    ]
-)
+# ==================== Search logged models, ordered ===================
 
-print(models)
+# experiment = mlflow.get_experiment_by_name('linear_regression_revenue')
+# models = my_mlflow.client.search_logged_models(
+#     experiment_ids=[experiment.experiment_id]
+#     ,order_by=[
+#         {"field_name": "creation_timestamp", "ascending": False}  # Highest accuracy first
+#     ]
+# )
 
+# print(models)
 
 
 # =========== Load the latest model ============
