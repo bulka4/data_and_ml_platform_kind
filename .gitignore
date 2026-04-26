@@ -2,3 +2,8 @@ create_k8s_secrets.sh
 git_code
 .kube
 __pycache__
+*.lock.hcl
+*.backup
+*.tfplan
+*.tfstate
+.terraform

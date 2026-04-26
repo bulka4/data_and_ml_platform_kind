@@ -35,7 +35,6 @@ postgres:
 mlflow:
   image:
     url: mlflow-tracking-server
-    # url: dataanalyticsbulka.azurecr.io/mlflow-tracking-server
     pullPolicy: IfNotPresent
     secretName: acr-secret  # secret for pulling images from ACR
   serviceAccountName: mlflow-project-sa

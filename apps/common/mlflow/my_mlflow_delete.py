@@ -1,5 +1,11 @@
 """
-Functions related to deleting data from the MLflow metadata database.
+Functions related to deleting data from the MLflow metadata database. We perform here two kinds of delete:
+    - Soft delete - Hide information about objects like models, experiments, runs from the UI and results of functions for searching
+        for those objects, like mlflow.search_runs()
+    - Hard delete - Delete objects metadata from the PostgreSQL metdatada database. This is a full and permanent delete.
+
+To improve:
+    - Right now we perform at first soft delete and then hard delete. But maybe it is enough to perform only a hard delete.
 """
 
 import mlflow
@@ -81,8 +87,10 @@ class MyMLflowDelete():
 
 
         # ====================== Hard delete ======================
+        # Delete metadata from the PostgreSQL metadata db
+
         if hard_delete:
-            # Delete metadata related to the run from the PostgreSQL metadata db
+            # Delete metadata related to the run
             self.delete_runs_metadata([run_id])
 
             if len(models) > 0:
@@ -147,9 +155,11 @@ class MyMLflowDelete():
 
 
         # ====================== Hard delete ======================
+        # Delete metadata from the PostgreSQL metadata db
+
         if hard_delete:
             if len(runs['run_id'].values) > 0:
-                # Delete metadata related to the run from the PostgreSQL metadata db
+                # Delete metadata related to the run
                 self.delete_runs_metadata([run_id for run_id in runs['run_id'].values])
 
             if len(models) > 0:

@@ -43,6 +43,7 @@ class KubernetesJobOperator(BaseOperator):
 
     def wait_for_job(self, batch_v1):
         "Wait for the Kubernetes job to finish. This function raises an exception when the job fails."
+        "We also set up a timeout here - raise an exception when the job is running longer then the limit specified by the self.timeout"
         
         start_time = time.time()
 
@@ -71,7 +72,7 @@ class KubernetesJobOperator(BaseOperator):
 
 
     def get_job_pod_logs(self, v1):
-        "Get logs from pods created by the job."
+        "Print logs from pods created by the job."
 
         pods = v1.list_namespaced_pod(
             namespace=self.namespace

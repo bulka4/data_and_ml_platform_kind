@@ -5,6 +5,10 @@ import time
 class SparkApplicationOperator(BaseOperator):
     """
     This is a custom Airflow operator for creating a SparkApplication resource on Kubernetes (for running Spark jobs).
+
+    Key features:
+        - This operator finishes execution when the SparkApplication is finished, not earlier
+        - When SparkApplication fails, this operator also fails
     """
     def __init__(
         self

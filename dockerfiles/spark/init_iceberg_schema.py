@@ -10,7 +10,7 @@ In this script we can create the 'default' schema (run a SQL query) because we c
 
 The defaultCatalog config is needed so dbt can create tables in this catalog. Looks like we can't specify in dbt which catalog to use.
 
-This script will run in the same container as Spark Thrift Server, so we connect to the localhost where Spark is already configured.
+This script will run in the same container as Spark Thrift Server, so it will use Spark configuration prepared there.
 """
 
 from pyspark.sql import SparkSession

@@ -1,3 +1,12 @@
+"""
+This DAG runs dbt in a pod using the KubernetesPodOperator. It would be better to replace it with the KubernetesJobOperator from the 
+airflow/dags/common/KubernetesJobOperator.py script.
+
+Key features:
+    - Pod pulls code from a git repo (in an init container)
+    - dbt code we run here will connect to Spark Thrift Server to perform calculations and save data in an Iceberg catalog
+"""
+
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 
 from airflow import DAG

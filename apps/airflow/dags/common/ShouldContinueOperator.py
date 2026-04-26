@@ -7,32 +7,36 @@ import json
 
 class ShouldContinueOperator(BaseOperator):
     """
-    This is a custom Airflow operator for deciding whether or not to continue with next, downstream Airflow tasks. The execute function of this operator
-    returns either:
-        - True (continue with next tasks)
-        - or False (don't continue with next tasks)
-
-    This operator runs a Kubernetes job using the provided YAML manifest and the value returned by this operator depends on the exit code returned by the
-    process running in that job.
-
-    If this operator decides not to progress with downstream tasks (returns False), then those tasks are just skipped, nothing is marked as failed.
+    This is a custom Airflow operator for deciding whether or not to continue with next, downstream Airflow tasks. It works like that:
+        - Run the Kubernetes job, specified by the provided manifest
+        - The job's pod saves a JSON in its termination logs indicating whether or not the model requires retraining.
+        - Depending on whether or not termination logs contain a specified key-value pair we will either continue with executing downstream tasks 
+            or skip them:
+            - If termination logs contains the specified key-value pair, then we continue executing downstream tasks in the DAG.
+            - Otherwise, this operator raises AirflowSkipException which causes that all the downstream tasks are skipped (not failed).
 
     Requirements for this operator to work properly:
         - The job must save termination logs in a JSON format (or don't log them at all)
 
     Arguments:
+        - task_id - ID of the Airflow task
+        - manifest - YAML manifest of the Kubernetes job (prepared using the Jinja.load_yaml function from the common/jinja.py module)
+        - job_name - Name of the Kubernetes job
+        - namespace - Namespace where to run the Kubernetes job
+        - timeout - How long to wait for the job to complete (in seconds) before marking the task as failed
         - messages_to_continue - If in the termination logs (which are in a JSON format) there will be at least one key-value pair which appears in
             the dictionary given by this arugment, we will continue executing downstream Airflow tasks
+        - delete_job - Whether or not to delete the job after completion
     """
     def __init__(
         self
-        ,task_id: str              # ID of the Airflow task
-        ,manifest                  # YAML manifest of the Kubernetes job (prepared using the Jinja.load_yaml function from the common/jinja.py module)
-        ,job_name: str             # Name of the Kubernetes job
-        ,namespace: str            # Namespace where to run the Kubernetes job
-        ,timeout: int              # How long to wait for the job to complete (in seconds) before marking the task as failed
+        ,task_id: str
+        ,manifest
+        ,job_name: str
+        ,namespace: str
+        ,timeout: int
         ,messages_to_continue: dict
-        ,delete_job: bool = False  # Whether or not to delete the job after completion
+        ,delete_job: bool = False
         ,**kwargs
     ):
         super().__init__(task_id=task_id, **kwargs)
@@ -60,7 +64,8 @@ class ShouldContinueOperator(BaseOperator):
     
 
     def wait_for_job(self, batch_v1):
-        "Wait for the Kubernetes job to finish."
+        "Wait for the Kubernetes job to finish. This function raises an exception when the job fails."
+        "We also set up a timeout here - raise an exception when the job is running longer then the limit specified by the self.timeout"
         
         start_time = time.time()
         
@@ -89,7 +94,7 @@ class ShouldContinueOperator(BaseOperator):
 
 
     def get_job_pod_logs(self, v1):
-        "Get logs from pods created by the job."
+        "Print logs from pods created by the job."
 
         pods = v1.list_namespaced_pod(
             namespace=self.namespace
@@ -106,8 +111,7 @@ class ShouldContinueOperator(BaseOperator):
 
     def get_job_pod_status_info(self, v1):
         """
-        Get the termination logs from the status of the job's pod which succeeded. We need to use the wait_for_job function first
-        before using this one, to make sure that job pods has been already finished.
+        Get the termination logs from the status of the job's pod which succeeded.
         
         Requirements for this function to work properly:
             - We need to use the wait_for_job() function first to make sure that the job is completed.
@@ -164,7 +168,7 @@ class ShouldContinueOperator(BaseOperator):
             # should_continue indicates whether or not to progress with next, downstream Airflow tasks in the DAG
             should_continue = False
 
-            # Check whether the message variable with pod's termination logs contains at least one specified key-value pair
+            # Check whether the message variable with pod's termination logs contains at least one key-value pair specified in the self.messages_to_continue
             if self.messages_to_continue is not None:
                 for key, value in self.messages_to_continue.items():
                     if key in message.keys() and message[key] == value:

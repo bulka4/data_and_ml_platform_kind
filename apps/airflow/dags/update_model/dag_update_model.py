@@ -2,6 +2,8 @@
 This DAG checks metrics related to ML model performance and if specific conditions are satisfied, then trains new models and saves the best one
 in the MLflow registry.
 
+It checks metrics by running the check_whether_to_train.py script.
+
 It runs scripts for training and evaluating models from the MLflow project 'apps/mlflow_projects/linear_regression_revenue' on the host.
 
 We run scripts as Kubernetes jobs defined by the train-models.yaml job manifest (we insert proper parameters into that manifest to use it for training
@@ -32,6 +34,7 @@ namespace = 'mlflow'
 # Image to use in the job (use image from Dockerfile mlflow_spark or mlflow_project. The mlflow_project is smaller but mlflow_spark is more universal
 # so we can use mlflow_spark for everything and don't build the mlflow_project at all).
 image = 'mlflow-spark'
+# Use a local image instead of trying to pull it from an online registry
 image_pull_policy = 'IfNotPresent'
 
 # Name of the experiment where to run the MLflow project
@@ -130,9 +133,15 @@ with DAG(
     ,default_args=default_args
     ,schedule_interval=None
 ) as dag:
-    # Check whether or not the model requires retraining. This operator runs the 'check_whether_to_retrain.py' script which checks metrics about
-    # model's performance saved in the Iceberg catalog and saves a JSON in termination logs of the pod running the script indicating whether or not
-    # the model requires retraining.
+    # This task checks whether or not the model requires retraining. The workflow looks like that:
+    #   - The ShouldContinueOperator operator runs a Kubernetes job specified by the 'check-whether-to-retrain.yaml' manifest which checks metrics
+    #       about model's performance saved in the Iceberg catalog 
+    #   - The job's pod saves a JSON in its termination logs indicating whether or not the model requires retraining.
+    
+    # Depending on whether or not termination logs contain the "should_retrain: True" key-value pair specified by the messages_to_continue argument
+    # of this operator, we will either continue with executing downstream tasks or skip them:
+    # - If termination logs contains the "should_retrain: True" key-value pair, then we continue executing downstream tasks to retrain the model.
+    # - Otherwise, this operator raises AirflowSkipException which causes that all the next tasks are skipped.
     should_retrain = ShouldContinueOperator(
         task_id='check_whether_to_retrain'
         ,manifest=should_retrain_job_manifest
@@ -140,7 +149,6 @@ with DAG(
         ,namespace=namespace
         ,timeout=3600
         ,delete_job=True
-        # Termination logs need to contain the "should_retrain: True" key-value pair to continue with retraining the model
         ,messages_to_continue={'should_retrain': True}
     )
     

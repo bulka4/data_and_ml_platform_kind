@@ -1,3 +1,9 @@
+"""
+This DAG runs a Python script in a pod using the KubernetesPodOperator. We specify the pod using arguments in the KubernetesPodOperator function.
+
+Better option is to use the KubernetesJobOperator like it is done for exmaple in the dags/update_model DAG.
+"""
+
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from kubernetes.client import V1Volume, V1VolumeMount, V1PersistentVolumeClaimVolumeSource, V1EnvVar, V1EnvVarSource, V1SecretKeySelector
 

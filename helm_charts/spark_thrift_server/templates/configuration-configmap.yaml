@@ -33,7 +33,7 @@ data:
     
 
 
-    # Below spark.sql.catalog.iceberg_catalog configs define Iceberg catalog (called "iceberg_catalog", this is a name we can choose here)
+    # Below spark.sql.catalog.iceberg_catalog configs define Iceberg catalog (called "iceberg_catalog". This is a name we choose here and we can change it.)
 
     # Define the class used to perform operations on tables from the "iceberg_catalog" catalog
     spark.sql.catalog.iceberg_catalog=org.apache.iceberg.spark.SparkCatalog

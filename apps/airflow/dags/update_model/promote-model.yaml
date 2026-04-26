@@ -13,7 +13,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
-              
+      
       containers:
         - name: mlflow-trainer
           image: {{ params.image }}

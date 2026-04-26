@@ -1,0 +1,48 @@
+namespace: spark
+
+# Variables for Hive Metastore
+hive:
+  # Image URL to use (with a tag)
+  image:
+    url: hive:latest
+    pullPolicy: IfNotPresent
+  # warehouseDir is a folder where to keep data warehouse data use by Spark.
+  # It must match what is set up in Spark's deployment, hive-site.xml, the spark.sql.warehouse.dir config
+  warehouseDir: abfss://${sa_container_name}@${sa_name}.dfs.core.windows.net/hive-warehouse
+  
+  storageAccount:
+    # Name of the Kubernetes secret with the following keys:
+    #   - storage-account - Name of the Storage Account to use
+    #   - sa-access-key - Access key to the Storage Account
+    secret: adls-sp-secret
+    # Name of the container to use as data warehouse
+    container: ${sa_container_name}
+  # Port on which Metastore will be listening
+  metastorePort: 9083
+  # Name of the database in PostgreSQL db with metadata and name of the user who is the owner of that database
+  database:
+    name: hive
+    user: hive
+  resources:
+    requests:
+      memory: "6Gi"
+      cpu: "1"
+    limits:
+      memory: "6Gi"
+      cpu: "2"
+
+# Variables for PostgreSQL which will be used as Hive Metastore metadata db
+postgresql:
+  image: public.ecr.aws/bitnami/postgresql:12 # Newer versions might not be compatible with Hive
+  # Name of the user and database to create which will be used by Hive for metadata
+  username: hive
+  database: hive
+  # Secret with values for authentication
+  secret:
+    name: hive-metastore-db-secret
+    adminPasswordKey: postgres-password # Set up POSTGRES_POSTGRES_PASSWORD env var (password for the `postgres` superuser (admin))
+    userPasswordKey: hive-password      # Set up POSTGRES_PASSWORD env var (password for the created user)      
+
+# Variables related to the ACR where we keep Docker images which will be deployed in pods
+acrSecret:
+  secretName: acr-secret

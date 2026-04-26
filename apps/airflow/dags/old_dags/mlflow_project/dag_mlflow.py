@@ -1,3 +1,9 @@
+"""
+This DAG runs a MLflow project in a pod using a specified YAML manifest.
+
+Better option is to use the KubernetesJobOperator like it is done for exmaple in the dags/update_model DAG.
+"""
+
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from kubernetes.client import (
     V1Volume, V1VolumeMount, V1EmptyDirVolumeSource, V1ResourceRequirements, V1Container, V1PodSpec

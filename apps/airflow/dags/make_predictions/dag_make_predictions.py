@@ -35,6 +35,7 @@ from common.SparkApplicationOperator import SparkApplicationOperator
 namespace = 'spark'
 # Name of the created SparkApplication resource
 resourceName = 'pyspark-app'
+# Use a local image instead of trying to pull it from an online registry
 imagePullPolicy = 'IfNotPresent'
 # path of the Spark script to run. This is the path to the Spark script relative to the "apps" folder from this repo (because we mount
 # the 'apps' folder from the host into the Spark driver and executor pods in the spark-application.yaml).

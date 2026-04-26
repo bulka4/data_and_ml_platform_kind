@@ -1,4 +1,4 @@
-# Pod running dbt which connects to the Spark Thrift Server
+# Pod running dbt. Code is pulled from a git repo in an init container.
 
 apiVersion: v1
 kind: Pod
@@ -28,7 +28,7 @@ spec:
   containers:
     - name: dbt
       image: "{{ params.image }}"
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: IfNotPresent # Use a local image instead of trying to pull it from an online registry
       command:
         - sh
         - -c

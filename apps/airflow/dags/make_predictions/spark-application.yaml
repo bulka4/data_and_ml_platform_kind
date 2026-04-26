@@ -2,8 +2,9 @@
 # We use here a volume with hostPath to provide the Spark script to run.
 
 # Spark configuration:
-# We create a different folder for Spark configuration '/opt/spark/custom_conf' because Spark Operator already mounts into '/opt/spark/conf', so
-# we can't mount another volume there.
+# We need to provide Spark configuration in the script this Spark Application will run, given by the mainApplicationFile parameter.
+# That's because there is a problem with providing dynamic values for those configurations (e.g. from secrets) in the spark-defaults.conf 
+# file or here in this YAML manifest.
 
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication

@@ -1,0 +1,27 @@
+# Variables for Spark Thrift Server
+namespace: spark
+
+image:
+  # URL of the Spark Docker image from a container registry (with a tag)
+  #url: spark-thrift-server:latest
+  url: mlflow-spark:latest
+  pullPolicy: IfNotPresent
+serviceAccountName: spark-thrift-sa # Name of the service account we will create
+serviceName: spark-thrift-server    # Name of the service we will create
+
+# Storage Account and container for storing data warehouse data used by Spark. Those params are used to prepare Spark config files.
+storageAccount:
+  # Name of the Kubernetes secret with the following keys:
+  #   - storage-account - Name of the Storage Account to use
+  #   - sa-access-key - Access key to the Storage Account
+  secret: adls-sp-secret
+  # Name of the Storage Account and container
+  name: ${sa_name}
+  container: ${sa_container_name}
+
+# Name of the folder in Azure Storage Account where to create an Iceberg catalog
+iceberg:
+  catalogFolder: iceberg-warehouse
+
+# Name of the secret with credentials to the ACR where we keep Docker images which will be deployed in pods
+acrSecretName: acr-secret

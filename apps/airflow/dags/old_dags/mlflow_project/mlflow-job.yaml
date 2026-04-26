@@ -16,7 +16,7 @@ spec:
   containers:
     - name: mlflow-job
       image: mlflow-project
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: IfNotPresent # Use a local image instead of trying to pull it from an online registry
       # Command to run a MLflow project
       command: ["sh", "-c"]
       args:

@@ -1,0 +1,49 @@
+# General namespace for all resources
+namespace: mlflow
+
+# Parameters for PostgreSQL db:
+#   - username: Username for the user to create
+#   - secret.name: Name of the secret with the password for the user to create
+#   - secret.userPasswordKey: Name of the key in the secret with the password for the user to create.
+#         This is a password for the POSTGRES_PASSWORD env var in PostgreSQL pod
+#   - secret.adminPasswordKey: Name of the key in the secret with the password for the admin user.
+#         This is a password for the POSTGRES_POSTGRES_PASSWORD env var in PostgreSQL pod
+#   - serviceName: Name of the service to create
+#   - database: Name of the database to create
+postgres:
+  image: public.ecr.aws/bitnami/postgresql:12
+  username: mlflow
+  secret:
+    name: postgres-backend-store
+    userPasswordKey: user-password
+    adminPasswordKey: admin-password
+  serviceName: postgres
+  database: mlflow
+
+# MLflow configuration. Here we have the following values:
+# - serviceAccountName - Name of the Service Account used in the Job running the MLflow project
+# - serviceName - Name of the Service which Tracking Server deployment will be using
+# - url - URL of the image to use (or name of the local image)
+# - pullPolicy - ImagePullPolicy for the deployment
+# - secretName - Name of the secret used for authentication when accessing ACR. It needs to be created like that:
+        # kubectl create secret docker-registry acr-secret \
+        #     --namespace <namespace> \
+        #     --docker-server=<acr_url> \ # ACR URL (<registry-name>.azurecr.io) 
+        #     --docker-username=<client_id> \  # That can be Service Principal client ID
+        #     --docker-password=<client_secret> \  # That can be Service Principal secret
+        #     --docker-email=unused@example.com # It doesn't matter what we put here but it is needed
+mlflow:
+  image:
+    url: mlflow-tracking-server
+    pullPolicy: IfNotPresent
+    secretName: acr-secret  # secret for pulling images from ACR
+  serviceAccountName: mlflow-project-sa
+  serviceName: tracking-server
+
+# Variables related to the Storage Account and container used as an artifact store
+storageAccount:
+  name: ${mlflow_storage_account_name}        # Name of the Storage Account
+  containerName: ${mlflow_container} # Name of the container in the Storage Account
+  secret:
+    name: artifact-store  # Name of the secret with an access key to the Storage Account
+    key: sa-access-key    # Name of the secret key with the Storage Account access key
