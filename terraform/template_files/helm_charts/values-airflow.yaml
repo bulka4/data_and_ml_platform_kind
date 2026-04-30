@@ -12,8 +12,8 @@ airflow:
 
   images:
     airflow:
-      repository: airflow
-      tag: latest
+      repository: ${airflow_image_name}
+      tag: ${airflow_image_tag}
   # Secret for pulling images from ACR
   # registry:
   #   secretName: acr-secret
@@ -21,7 +21,7 @@ airflow:
     - name: AIRFLOW__CORE__LOAD_EXAMPLES
       value: "false"
     - name: AIRFLOW__KUBERNETES_EXECUTOR__NAMESPACE
-      value: airflow
+      value: ${airflow_kubernetes_namespace}
     # Add more logs for debugging
     - name: AIRFLOW__LOGGING__LOGGING_LEVEL
       value: DEBUG
@@ -163,7 +163,7 @@ airflow:
     extraInitContainers:
       # Createe an Airflow user for accessing UI. For some reason Helm parameters for creating the default user doesn't work
       - name: create-admin-user
-        image: airflow:latest
+        image: ${airflow_image_name}:${airflow_image_tag}
         imagePullPolicy: IfNotPresent
         # Create a new user. Use '|| true' (|| is the logical operator OR) so that command doesn't fail when user already exists.
         command:
@@ -189,7 +189,7 @@ airflow:
       # Create a connection for accessing an Azure Storage Account where Airflow will be saving logs. It uses client ID and secret of a Service Principal
       # with permissions to that Storage Account. Values are taken from a Kubernetes secret which needs to be created before deploying this chart.
       - name: create-azure-connection
-        image: airflow:latest
+        image: ${airflow_image_name}:${airflow_image_tag}
         imagePullPolicy: IfNotPresent
         # Create a new connection if it doesn't exist yet (|| is the logical operator OR)
         command:

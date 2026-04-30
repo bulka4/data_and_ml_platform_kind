@@ -9,11 +9,11 @@ FROM ubuntu:22.04
 # - MLflow
 ARG CLUSTER_NAME=data-platform
 ARG AIRFLOW_IMAGE_NAME=airflow:latest
-ARG AIRFLOW_DAG_IMAGE_NAME=airflow-dag:latest
+# ARG AIRFLOW_DAG_IMAGE_NAME=airflow-dag:latest
 ARG SPARK_IMAGE_NAME=spark-thrift-server:latest
-ARG HIVE_IMAGE_NAME=hive:latest
+# ARG HIVE_IMAGE_NAME=hive:latest
 ARG MLFLOW_TRACKING_SERVER_IMAGE_NAME=mlflow-tracking-server:latest
-ARG MLFLOW_PROJECT_IMAGE_NAME=mlflow-project:latest
+# ARG MLFLOW_PROJECT_IMAGE_NAME=mlflow-project:latest
 ARG MLFLOW_SPARK=mlflow-spark:latest
 ARG DBT_IMAGE_NAME=dbt:latest
 # This prevents prompting user for input for example when using apt-get.
@@ -100,20 +100,14 @@ COPY dockerfiles /root/dockerfiles
 # Save the script for building images and loading them to kind.
 RUN <<EOF cat > /root/dockerfiles/build_and_load.sh
 docker build -t $AIRFLOW_IMAGE_NAME -f dockerfiles/airflow.Dockerfile dockerfiles
-docker build -t $AIRFLOW_DAG_IMAGE_NAME -f dockerfiles/airflow.dag.Dockerfile dockerfiles
 docker build -t $SPARK_IMAGE_NAME -f dockerfiles/spark/spark.thrift.server.Dockerfile dockerfiles/spark
-docker build -t $HIVE_IMAGE_NAME -f dockerfiles/hive/hive.Dockerfile dockerfiles/hive
 docker build -t $DBT_IMAGE_NAME -f dockerfiles/dbt.Dockerfile dockerfiles
-docker build -t $MLFLOW_PROJECT_IMAGE_NAME -f dockerfiles/mlflow_project/mlflow.project.Dockerfile dockerfiles/mlflow_project
 docker build -t $MLFLOW_TRACKING_SERVER_IMAGE_NAME -f dockerfiles/mlflow.tracking.server.Dockerfile dockerfiles
 docker build -t $MLFLOW_SPARK -f dockerfiles/mlflow_spark/mlflow.spark.Dockerfile dockerfiles/mlflow_spark
 
 kind load docker-image $AIRFLOW_IMAGE_NAME --name $CLUSTER_NAME
-kind load docker-image $AIRFLOW_DAG_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $SPARK_IMAGE_NAME --name $CLUSTER_NAME
-kind load docker-image $HIVE_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $DBT_IMAGE_NAME --name $CLUSTER_NAME
-kind load docker-image $MLFLOW_PROJECT_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $MLFLOW_TRACKING_SERVER_IMAGE_NAME --name $CLUSTER_NAME
 kind load docker-image $MLFLOW_SPARK --name $CLUSTER_NAME
 EOF

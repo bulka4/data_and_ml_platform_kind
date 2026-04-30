@@ -73,7 +73,7 @@ module "service_principal" {
   service_principal_display_name = "rag_workflow"
   role_assignments = [
     {role = "Storage Blob Data Contributor", scope = module.system_files_sa.id}
-    {role = "Storage Blob Data Contributor", scope = module.dwh_sa.id}
+    ,{role = "Storage Blob Data Contributor", scope = module.dwh_sa.id}
   ]
 }
 
@@ -83,9 +83,12 @@ module "service_principal" {
 # - Dockerfile for creating an image for interacting with AKS
 # - values.yaml files for Helm charts
 locals {
+  spark_image_name = "spark-thrift-server"
+  airflow_image_name = "airflow"
+  airflow_image_tag = "latest"
+  
   # values.yaml for the Airflow Helm chart
   airflow_chart_values = templatefile("template_files/helm_charts/values-airflow.yaml", {
-    acr_url             = module.acr.url
     airflow_image_name  = local.airflow_image_name
     airflow_image_tag   = local.airflow_image_tag
 
@@ -93,15 +96,6 @@ locals {
     
     airflow_logs_sa_name        = local.system_files_sa_name        # Name of the Storage Account where logs will be saved
     airflow_logs_container_name = local.airflow_logs_container_name # Name of the container where logs will be saved
-    airflow_dags_fs_name        = module.git_sync_fs.name               # Name of the File share where DAGs code will be saved
-
-    repo_url  = "https://github.com/bulka4/data_and_ml_platform.git"  # URL of the repository with code with Airflow DAGs (https://github.com/<org-name>/<repo-name>.git)
-    repo_name = "data_and_ml_platform.git"                            # Name of the repo (<repo-name>.git)
-    branch    = "main"                                                # Branch with the code to run
-    dags_folder_path = "apps/airflow/dags"                            # Path to the folder with dags within the repo
-
-    storage_account_secret = "airflow-azure-blob" # Name of the secret with credentials for accessing Storage Account (to create a connection)
-    acr_secret_name = "acr-secret"
   })
 
 

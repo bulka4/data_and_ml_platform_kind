@@ -18,7 +18,7 @@ add any records, so nothing wrong will happen).
 -- Get URI of the latest model used
 with latest_model_uri as (
     select modelURI
-    from {{ ref('fact_clients_total_revenue_predictions') }}
+    from {{ source('python', 'clients_total_revenue_predictions') }}
     order by month desc
     limit 1
 )
@@ -35,11 +35,11 @@ with latest_model_uri as (
             else predictedRevenue
         end as predictedRevenue
     from
-        {{ ref('fact_clients_total_revenue_predictions') }} as pred
+        {{ source('python', 'clients_total_revenue_predictions') }} as pred
 
         cross join latest_model_uri
     where
-        month > (select add_months(max(month), -3) from {{ ref('fact_clients_total_revenue_predictions') }})
+        month > (select add_months(max(month), -3) from {{ source('python', 'clients_total_revenue_predictions') }})
 )
 
 -- RMSE for the last 1 month (those predictions were made using the latest model so we don't need to use the 'predictions' CTE)
@@ -50,7 +50,7 @@ with latest_model_uri as (
     from
         {{ ref('fact_clients_total_revenue') }} as rev
 
-        left join {{ ref('fact_clients_total_revenue_predictions') }} as pred
+        left join {{ source('python', 'clients_total_revenue_predictions') }} as pred
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where
@@ -92,7 +92,7 @@ with latest_model_uri as (
     from
         {{ ref('fact_clients_total_revenue') }} as rev
 
-        left join {{ ref('fact_clients_total_revenue_predictions') }} as pred
+        left join {{ source('python', 'clients_total_revenue_predictions') }} as pred
             on pred.clientID = rev.clientID
             and pred.month = rev.month
     where

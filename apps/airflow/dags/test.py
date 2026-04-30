@@ -3,13 +3,12 @@ from kubernetes import client, config
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 
-namespace = 'mlflow'
-job_name = 'check-whether-to-retrain-1775016866'
+namespace = 'spark'
+resource_name = 'pyspark-app'
 
-pods = v1.list_namespaced_pod(
+driver_pod = v1.list_namespaced_pod(
     namespace=namespace
-    ,label_selector=f"job-name={job_name}"
-)
+    ,label_selector=f"{resource_name}-driver"
+).items
 
-for pod in pods.items:
-    print(pod.status)
+print(driver_pod)

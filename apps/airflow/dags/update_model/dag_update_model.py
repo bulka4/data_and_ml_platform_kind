@@ -75,7 +75,7 @@ base_params = {
 # Job manifest for checking whether or not a retraining of the model is needed
 should_retrain_job_params = base_params.copy()
 should_retrain_job_params['job_name'] = f'check-whether-to-retrain-{int(time())}'
-should_retrain_job_params['metric_threshold'] = 9999999                # When metric is higher than the metric_threshold, then model requires a retraining
+should_retrain_job_params['metric_threshold'] = 99999999                # When metric is higher than the metric_threshold, then model requires a retraining
 
 should_retrain_job_manifest = jinja.load_yaml('/opt/airflow/dags/update_model/check-whether-to-retrain.yaml', should_retrain_job_params)
 

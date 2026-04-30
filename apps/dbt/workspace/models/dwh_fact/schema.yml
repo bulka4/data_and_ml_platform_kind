@@ -24,15 +24,3 @@ models:
         description: "Amount of the product sold"
       - name: totalPrice
         description: "Total price of the product sold"
-
-  - name: fact_clients_total_revenue_predictions
-    description: This is an external table (created empty in dbt but populated with data outside of it, by external processes)
-    columns:
-      - name: clientID
-        description: Client for which we make predictions
-      - name: month
-        description: Month for which we make predictions
-      - name: predictedRevenue
-        description: Predicted revenue
-      - name: modelURI
-        description: MLflow registry URI of the model used to make predictions

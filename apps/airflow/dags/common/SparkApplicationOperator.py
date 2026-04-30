@@ -83,16 +83,19 @@ class SparkApplicationOperator(BaseOperator):
             - v1 - An object created using client.CoreV1Api() function which represents a Kubernetes API client to work with pods (by making a Rest API call to Kubernetes)
         """
         # Find the Spark driver pod created by the Spark operator
-        driver_pod = v1.list_namespaced_pod(
+        found_pods = v1.list_namespaced_pod(
             namespace=self.namespace
             ,label_selector=f"{self.resource_name}-driver"
-        )[0]
+        ).items
 
-        print(f"Logs from pod {driver_pod.metadata.name}:")
-        print(v1.read_namespaced_pod_log(
-            name=driver_pod.metadata.name
-            ,namespace=self.namespace
-        ))
+        if len(found_pods) > 0:
+            driver_pod = found_pods[0]
+
+            print(f"Logs from pod {driver_pod.metadata.name}:")
+            print(v1.read_namespaced_pod_log(
+                name=driver_pod.metadata.name
+                ,namespace=self.namespace
+            ))
 
 
     def execute(self, context):
